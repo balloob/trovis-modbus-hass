@@ -1,0 +1,12 @@
+{
+  "domain": "trovis557x",
+  "name": "Samson Trovis 557x (tmodbus)",
+  "codeowners": ["@balloob"],
+  "config_flow": true,
+  "documentation": "https://github.com/balloob/trovis-modbus-hass",
+  "integration_type": "device",
+  "iot_class": "local_polling",
+  "loggers": ["modbus_connection", "trovis_modbus", "tmodbus"],
+  "requirements": ["tmodbus==0.3.0", "serialx==1.8.2"],
+  "version": "0.1.0"
+}

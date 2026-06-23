@@ -1,0 +1,40 @@
+[project]
+name = "trovis-modbus-hass-tmodbus-tests"
+version = "0"
+description = "Dev/test environment for the Trovis 557x custom component (tmodbus)."
+requires-python = ">=3.12"
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "pytest-asyncio>=0.24",
+    # The backend under test.
+    "tmodbus==0.3.0",
+    "serialx==1.8.2",
+    # pymodbus is only used to stand up the in-process Modbus *server* the tests
+    # talk to (a backend-neutral device on the wire), not as the client backend.
+    "pymodbus[serial]==3.11.2",
+    # Real Home Assistant + harness, to test the config flow and entry setup.
+    "pytest-homeassistant-custom-component",
+]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py312"
+# The vendored libraries are linted/formatted in their own repos.
+extend-exclude = ["custom_components/trovis557x/vendor"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B"]
+
+[tool.ruff.lint.per-file-ignores]
+# `_vendor` must be imported before the vendored libs, so it cannot be sorted
+# into the normal third-party/local order.
+"custom_components/trovis557x/__init__.py" = ["I001"]

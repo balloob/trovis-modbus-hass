@@ -1,0 +1,40 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "description": "How is the controller connected?",
+        "menu_options": {
+          "network": "Network (Modbus TCP)",
+          "serial": "Serial (Modbus RTU)"
+        }
+      },
+      "network": {
+        "title": "Network connection",
+        "data": {
+          "host": "Host",
+          "port": "Port",
+          "unit_id": "Modbus Unit"
+        },
+        "data_description": {
+          "host": "The hostname or IP address of the Modbus gateway or device.",
+          "port": "The TCP port the Modbus gateway listens on (default 502).",
+          "unit_id": "The controller's Modbus station address (PA1; default 246)."
+        }
+      },
+      "serial": {
+        "title": "Serial connection",
+        "data": {
+          "device": "Serial port",
+          "unit_id": "Modbus Unit"
+        },
+        "data_description": {
+          "device": "The serial port the controller is wired to. The line is fixed at 19200 baud, 8N1.",
+          "unit_id": "The controller's Modbus station address (PA1; default 246)."
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect. Check the connection details and that the controller is reachable."
+    }
+  }
+}
