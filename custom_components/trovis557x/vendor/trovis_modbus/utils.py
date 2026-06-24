@@ -2,10 +2,19 @@
 
 from __future__ import annotations
 
+from datetime import time
 from typing import NamedTuple
 
 # Outside-temperature x-axis shared by every heating curve.
 OUTSIDE_TEMPERATURES: list[int] = list(range(-20, 21))
+
+
+def time_from_hhmm(raw: int | None) -> time | None:
+    """Decode the controller's packed HHMM time (e.g. 1430 -> 14:30)."""
+    if raw is None:
+        return None
+    hour, minute = divmod(raw, 100)
+    return time(hour=hour, minute=minute) if hour < 24 and minute < 60 else None
 
 
 class MonthDay(NamedTuple):

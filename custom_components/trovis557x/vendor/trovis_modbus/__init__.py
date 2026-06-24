@@ -6,16 +6,15 @@ objects::
 
     device.sensors.outside_1
     device.heating_circuit_1.room_setpoint_active
-    device.hot_water.charging
+    device.hot_water.charge_pump_running
 
 The library is organized by sub-system — one file each for ``device_info``,
 ``controller``, ``clock``, ``sensors``, ``heating_circuit`` and ``hot_water`` —
-over the ``Component`` / ``RegisterField`` / ``CoilField`` base classes in
-``component.py``.
+built on the generic ``Component`` / ``RegisterField`` / ``CoilField`` framework
+in ``modbus_connection.model``.
 """
 
 from .clock import Clock
-from .component import CoilField, Component, RegisterField
 from .controller import Controller
 from .device_info import DeviceInformation
 from .enums import OperatingMode, Weekday
@@ -28,15 +27,12 @@ from .utils import OUTSIDE_TEMPERATURES, MonthDay, heating_curve
 __all__ = [
     "OUTSIDE_TEMPERATURES",
     "Clock",
-    "CoilField",
-    "Component",
     "Controller",
     "DeviceInformation",
     "HeatingCircuit",
     "HotWater",
     "MonthDay",
     "OperatingMode",
-    "RegisterField",
     "Sensors",
     "Trovis557x",
     "Weekday",

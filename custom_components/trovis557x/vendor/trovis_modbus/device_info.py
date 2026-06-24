@@ -6,15 +6,17 @@ sw_version, hw_version, serial_number) directly on the component.
 
 from __future__ import annotations
 
-from .component import Component, gauge, integer
+from modbus_connection.model import gauge, integer
+
+from .model import TrovisComponent
 
 
-class DeviceInformation(Component):
+class DeviceInformation(TrovisComponent):
     """Controller identity and firmware/hardware versions."""
 
     manufacturer = "Samson"
 
-    system = gauge(1, 0.1, signed=False, doc="Hydraulic system code")
+    system = gauge(1, 0.1, signed=False)  # hydraulic-system / "Anlage" code
     _model_raw = integer(0, signed=False)
     _firmware_raw = gauge(2, 0.01, signed=False)
     _hardware_raw = gauge(3, 0.01, signed=False)

@@ -4,8 +4,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from modbus_connection.model import Component, ComponentGroup
+
 from .clock import Clock
-from .component import Component
 from .controller import Controller
 from .device_info import DeviceInformation
 from .heating_circuit import HeatingCircuit
@@ -26,7 +27,7 @@ class Trovis557x:
         trovis.sensors.outside_1                 # °C
         trovis.heating_circuit_1.room_setpoint_active
         trovis.heating_circuit_1.pump_running    # bool
-        trovis.hot_water.charging
+        trovis.hot_water.charge_pump_running
         trovis.info.model
 
     Each sub-system can also be refreshed on its own (``await
@@ -35,6 +36,7 @@ class Trovis557x:
     """
 
     def __init__(self, unit: ModbusUnit) -> None:
+        self._unit = unit
         self.info = DeviceInformation(unit)
         self.controller = Controller(unit)
         self.clock = Clock(unit)
@@ -43,6 +45,9 @@ class Trovis557x:
         self.heating_circuit_2 = HeatingCircuit(unit, index=2)
         self.heating_circuit_3 = HeatingCircuit(unit, index=3)
         self.hot_water = HotWater(unit)
+        # One pooled-read group over every sub-system; it derives the readable
+        # ranges from the components and caches its block plan after the first poll.
+        self._group = ComponentGroup(unit, self.components)
 
     @property
     def heating_circuits(self) -> tuple[HeatingCircuit, HeatingCircuit, HeatingCircuit]:
@@ -66,6 +71,11 @@ class Trovis557x:
         )
 
     async def async_update(self) -> None:
-        """Refresh every sub-system."""
-        for component in self.components:
-            await component.async_update()
+        """Refresh every sub-system in as few Modbus calls as possible.
+
+        All sub-systems share one unit, so their register and coil reads are
+        pooled into a single consolidated set of block reads — adjacent registers
+        from different sub-systems are fetched together — rather than each
+        component querying independently. Listeners then fire per sub-system.
+        """
+        await self._group.async_update()

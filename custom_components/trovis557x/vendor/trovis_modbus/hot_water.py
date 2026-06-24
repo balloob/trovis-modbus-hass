@@ -2,69 +2,60 @@
 
 from __future__ import annotations
 
-from .component import (
-    Component,
-    coil,
-    gauge,
-    integer,
-    operating_mode,
-    temperature,
-    time_value,
-    weekday_value,
-)
-from .enums import OperatingMode
+import datetime
+
+from modbus_connection.model import coil, enum, gauge, integer, raw_register
+
+from .enums import OperatingMode, Weekday
+from .model import TrovisComponent, temperature
+from .utils import time_from_hhmm
 
 
-class HotWater(Component):
+class HotWater(TrovisComponent):
     """Domestic hot water: setpoints, charging and thermal disinfection."""
 
-    storage_temperature = temperature(22, doc="Storage temperature (SF1)")
-    storage_temperature_lower = temperature(23, doc="Lower storage temperature (SF2)")
+    storage_temperature = temperature(22)  # SF1
+    storage_temperature_lower = temperature(23)  # SF2
 
-    mode = operating_mode(111, writable=True, level_coil=94, doc="Operating mode")
-    setpoint_day = temperature(1799, writable=True, doc="Hot-water setpoint (day)")
-    setpoint_active = temperature(1807, doc="Currently active hot-water setpoint")
-    setpoint_max = temperature(1800, writable=True, doc="Maximum settable setpoint")
-    setpoint_min = temperature(1801, writable=True, doc="Minimum settable setpoint")
-    hysteresis = gauge(1802, 0.1, unit="K", writable=True, doc="Switching hysteresis")
-    charge_overshoot = gauge(
-        1803, 0.1, unit="K", writable=True, doc="Charging temp overshoot"
-    )
-    max_charge_temp = temperature(1805, writable=True, doc="Maximum charge temp")
-    hold_value = temperature(1806, writable=True, doc="Hold (minimum) temperature")
-    active_charge_setpoint = temperature(1837, doc="Active charging setpoint")
-    return_max = temperature(1827, writable=True, doc="Maximum return temperature")
-    disinfection_temp = temperature(1829, writable=True, doc="Disinfection temperature")
-    disinfection_weekday = weekday_value(
-        1830, writable=True, doc="Disinfection weekday"
-    )
-    disinfection_start = time_value(1831, writable=True, doc="Disinfection start time")
-    disinfection_stop = time_value(1832, writable=True, doc="Disinfection stop time")
-    disinfection_hold = integer(
-        1838, writable=True, unit="min", doc="Disinfection hold duration"
-    )
+    mode = enum(111, OperatingMode, writable=True, level_coil=94)
+    setpoint_day = temperature(1799, writable=True)
+    setpoint_active = temperature(1807)
+    setpoint_max = temperature(1800, writable=True)
+    setpoint_min = temperature(1801, writable=True)
+    hysteresis = gauge(1802, 0.1, unit="K", writable=True)
+    charge_overshoot = gauge(1803, 0.1, unit="K", writable=True)
+    max_charge_temp = temperature(1805, writable=True)
+    hold_value = temperature(1806, writable=True)  # minimum maintained temperature
+    active_charge_setpoint = temperature(1837)
+    return_max = temperature(1827, writable=True)
+    disinfection_temp = temperature(1829, writable=True)
+    disinfection_weekday = enum(1830, Weekday, writable=True)
+    _disinfection_start_raw = raw_register(1831, writable=True)
+    _disinfection_stop_raw = raw_register(1832, writable=True)
+    disinfection_hold = integer(1838, writable=True, unit="min")  # hold duration
 
-    automatic = coil(1799, doc="Time-program controlled")
-    disinfection_active = coil(1800, doc="Thermal disinfection running")
-    priority = coil(1801, doc="Hot-water priority active")
-    max_charge_limit_active = coil(1802, doc="Max charge-temp limiting active")
-    return_limit_active = coil(1803, doc="Return-temp limiting active")
-    standby = coil(1804, doc="Standby")
-    frost_protection = coil(1805, doc="Frost protection active")
-    forced_charge = coil(1806, writable=True, doc="Force a storage charge")
-    solar_pump_running = coil(1807, doc="Solar circuit pump on")
-    manual_active = coil(7, doc="Manual mode active")
-    charge_pump_running = coil(
-        59, writable=True, level_coil=98, doc="Storage charge pump on"
-    )
-    circulation_pump_running = coil(
-        60, writable=True, level_coil=99, doc="Circulation pump on"
-    )
+    automatic = coil(1799)  # following the time program
+    disinfection_active = coil(1800)
+    priority = coil(1801)  # hot water has priority over heating
+    max_charge_limit_active = coil(1802)
+    return_limit_active = coil(1803)
+    standby = coil(1804)
+    frost_protection = coil(1805)
+    forced_charge = coil(1806, writable=True)
+    solar_pump_running = coil(1807)
+    manual_active = coil(7)
+    charge_pump_running = coil(59, writable=True, level_coil=98)  # storage pump (SLP)
+    circulation_pump_running = coil(60, writable=True, level_coil=99)  # ZP
 
     @property
-    def charging(self) -> bool | None:
-        """Whether the storage is currently being charged (charge pump on)."""
-        return self.charge_pump_running
+    def disinfection_start(self) -> datetime.time | None:
+        """Start time of the thermal-disinfection window."""
+        return time_from_hhmm(self._disinfection_start_raw)
+
+    @property
+    def disinfection_stop(self) -> datetime.time | None:
+        """End time of the thermal-disinfection window."""
+        return time_from_hhmm(self._disinfection_stop_raw)
 
     async def set_setpoint(self, celsius: float) -> None:
         """Set the hot-water day setpoint (°C)."""

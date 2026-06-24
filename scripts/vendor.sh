@@ -11,10 +11,14 @@ mc="$root/../modbus-connection/src/modbus_connection"
 tm="$root/../trovis-modbus/src/trovis_modbus"
 
 rm -rf "$vendor"
-mkdir -p "$vendor/modbus_connection/tmodbus" "$vendor/trovis_modbus"
+mkdir -p "$vendor/modbus_connection/tmodbus" "$vendor/modbus_connection/model" \
+    "$vendor/trovis_modbus"
 
-# modbus_connection: top-level interface + tmodbus backend only (no pymodbus).
-cp "$mc"/{__init__.py,_protocol.py,_types.py,exceptions.py,py.typed} "$vendor/modbus_connection/"
+# modbus_connection: top-level interface + codecs + the device-modelling
+# framework + tmodbus backend only (no pymodbus, no mock/pytest plugin).
+cp "$mc"/{__init__.py,_protocol.py,_types.py,exceptions.py,decode.py,encode.py,py.typed} \
+    "$vendor/modbus_connection/"
+cp "$mc"/model/*.py "$vendor/modbus_connection/model/"
 cp "$mc"/tmodbus/__init__.py "$vendor/modbus_connection/tmodbus/"
 
 # trovis_modbus: the whole library.

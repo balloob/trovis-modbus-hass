@@ -4,15 +4,23 @@ from __future__ import annotations
 
 import datetime
 
-from .component import Component, raw_register, time_value
+from modbus_connection.model import raw_register
+
+from .model import TrovisComponent
+from .utils import time_from_hhmm
 
 
-class Clock(Component):
-    """Controller clock. ``time`` decodes directly; ``date`` needs day + year."""
+class Clock(TrovisComponent):
+    """Controller clock, exposed as native ``date`` / ``time`` / ``datetime``."""
 
-    time = time_value(99, writable=True, doc="Time of day")
+    _time_raw = raw_register(99, writable=True)
     _date_raw = raw_register(100, writable=True)
     _year_raw = raw_register(101, writable=True)
+
+    @property
+    def time(self) -> datetime.time | None:
+        """Time of day (the controller stores it packed as HHMM)."""
+        return time_from_hhmm(self._time_raw)
 
     @property
     def date(self) -> datetime.date | None:

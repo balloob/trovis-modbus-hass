@@ -54,7 +54,9 @@ _CIRCUIT: tuple[tuple[str, str, BinarySensorDeviceClass | None], ...] = (
 )
 
 _HOT_WATER: tuple[TrovisBinaryDescription, ...] = (
-    _binary("hot_water", "charging", "Charging", BinarySensorDeviceClass.HEAT),
+    _binary(
+        "hot_water", "charge_pump_running", "Charging", BinarySensorDeviceClass.HEAT
+    ),
     _binary(
         "hot_water",
         "disinfection_active",
