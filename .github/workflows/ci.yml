@@ -24,6 +24,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
+        with:
+          # Current Home Assistant needs Python 3.13+; without this uv picks the
+          # 3.12 floor and resolves an HA too old for the APIs the flow uses.
+          python-version: "3.13"
       - name: Install dependencies
         run: uv sync
       - name: Run tests

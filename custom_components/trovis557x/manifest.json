@@ -1,7 +1,7 @@
 {
   "domain": "trovis557x",
   "name": "Samson Trovis 557x",
-  "codeowners": ["@balloob"],
+  "codeowners": ["@Tom-Bom-badil"],
   "config_flow": true,
   "documentation": "https://github.com/Tom-Bom-badil/trovis-modbus-hass",
   "integration_type": "device",
