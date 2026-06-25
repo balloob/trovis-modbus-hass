@@ -1,11 +1,4 @@
-# Samson Trovis 557x — Home Assistant integration (tmodbus backend)
-
-> **This is the tmodbus-backed build** of the Trovis 557x integration — identical
-> to the pymodbus version except the vendored connection layer uses
-> [tmodbus](https://github.com/wlcrs/tmodbus) instead of pymodbus, and the
-> manifest installs `tmodbus` + `serialx`. It is a portability proof: the
-> `trovis_modbus` library and every entity are unchanged; only the backend swaps,
-> exactly as the `modbus_connection` abstraction promises.
+# Samson Trovis 557x — Home Assistant integration
 
 A Home Assistant **custom integration** for the Samson Trovis 557x heating
 controller, talking Modbus directly (TCP or serial). It surfaces the full sensor
@@ -64,8 +57,8 @@ One device, with proper entity types per sub-system:
 ## How it works
 
 Trovis is a **direct** Modbus connection — you do **not** need any separate
-Modbus integration. On setup the component builds a pymodbus-backed connection
-via the vendored `modbus_connection.pymodbus` (`connect_tcp` / `connect_serial`),
+Modbus integration. On setup the component builds a tmodbus-backed connection
+via the vendored `modbus_connection.tmodbus` (`connect_tcp` / `connect_serial`),
 takes a `ModbusUnit` for the configured address, and hands it to the vendored
 `trovis_modbus` library. A `DataUpdateCoordinator` polls on your interval; if the
 link drops the entry reloads to re-establish it.

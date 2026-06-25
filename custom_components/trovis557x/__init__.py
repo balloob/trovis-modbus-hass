@@ -2,7 +2,7 @@
 
 Trovis is a DIRECT Modbus connection: this integration owns the connection. The
 config flow asks for Network (TCP) or Serial; either choice builds a
-pymodbus-backed connection via the vendored ``modbus_connection.pymodbus``, gets
+tmodbus-backed connection via the vendored ``modbus_connection.tmodbus``, gets
 a ``ModbusUnit`` and hands it to the vendored ``trovis_modbus`` library.
 """
 

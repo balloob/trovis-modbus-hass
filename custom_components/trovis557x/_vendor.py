@@ -1,6 +1,6 @@
 """Make the vendored libraries importable.
 
-`modbus_connection` (interface + pymodbus backend) and `trovis_modbus` are
+`modbus_connection` (interface + tmodbus backend) and `trovis_modbus` are
 bundled under ``vendor/`` so the component installs from a zip without access to
 the private source repos. Importing this module puts that directory on
 ``sys.path``.

@@ -1,6 +1,6 @@
 {
   "domain": "trovis557x",
-  "name": "Samson Trovis 557x (tmodbus)",
+  "name": "Samson Trovis 557x",
   "codeowners": ["@balloob"],
   "config_flow": true,
   "documentation": "https://github.com/balloob/trovis-modbus-hass",
