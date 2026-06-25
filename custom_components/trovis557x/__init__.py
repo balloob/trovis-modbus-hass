@@ -12,6 +12,10 @@ from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 from modbus_connection import ModbusConnectionError
+from ._local_dev import apply_local_trovis_modbus_override
+
+apply_local_trovis_modbus_override()
+
 from trovis_modbus import Trovis557x
 
 from .config_flow import open_connection

@@ -11,6 +11,10 @@ from homeassistant.components.water_heater import (
 from homeassistant.const import ATTR_TEMPERATURE, UnitOfTemperature
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+from ._local_dev import apply_local_trovis_modbus_override
+
+apply_local_trovis_modbus_override()
+
 from trovis_modbus import HotWater, OperatingMode
 
 from .coordinator import TrovisConfigEntry, TrovisCoordinator

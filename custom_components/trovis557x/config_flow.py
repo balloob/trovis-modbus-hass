@@ -15,6 +15,10 @@ from homeassistant.helpers.selector import (
 )
 from modbus_connection import ModbusConnection, ModbusError
 from modbus_connection.tmodbus import connect_serial, connect_tcp
+from ._local_dev import apply_local_trovis_modbus_override
+
+apply_local_trovis_modbus_override()
+
 from trovis_modbus import Trovis557x
 
 from .const import (

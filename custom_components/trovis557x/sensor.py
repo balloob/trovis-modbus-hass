@@ -20,6 +20,10 @@ from homeassistant.components.sensor import (
 from homeassistant.const import PERCENTAGE, EntityCategory, UnitOfTemperature
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+from ._local_dev import apply_local_trovis_modbus_override
+
+apply_local_trovis_modbus_override()
+
 from trovis_modbus import OperatingMode
 
 from .coordinator import TrovisConfigEntry, TrovisCoordinator

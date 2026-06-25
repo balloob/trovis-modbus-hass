@@ -8,6 +8,10 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from modbus_connection import ModbusConnection, ModbusError
+from ._local_dev import apply_local_trovis_modbus_override
+
+apply_local_trovis_modbus_override()
+
 from trovis_modbus import Trovis557x
 
 from .const import DOMAIN, SCAN_INTERVAL
