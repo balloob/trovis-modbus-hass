@@ -1,7 +1,8 @@
 """Base entity for Trovis 557x.
 
-Each heating circuit and the hot water tank are their own (sub-)device, linked to
-the controller via ``via_device``; everything else belongs to the controller.
+Each heating circuit, the hot water tank, and the physical input sensors
+are their own (sub-)devices, linked to the controller via ``via_device``.
+Everything else belongs to the controller.
 """
 
 from __future__ import annotations
@@ -15,6 +16,8 @@ from .coordinator import TrovisCoordinator
 
 def _sub_device(component: str) -> tuple[str, str] | None:
     """(sub-device id, name) for a component, or None for the controller."""
+    if component == "sensors":
+        return "measurements", "Measurements"
     if component.startswith("heating_circuit_"):
         number = component.rsplit("_", 1)[1]
         return f"circuit_{number}", f"Heating circuit {number}"
