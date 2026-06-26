@@ -52,7 +52,7 @@ class TrovisHotWaterEntity(TrovisEntity, WaterHeaterEntity):
     def __init__(self, coordinator: TrovisCoordinator) -> None:
         super().__init__(
             coordinator,
-            key="water_heater",
+            key="circuit4dhw",
             component="hot_water",
             platform="water_heater",
         )

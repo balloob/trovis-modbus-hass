@@ -57,19 +57,25 @@ _CIRCUIT: tuple[tuple[str, str, BinarySensorDeviceClass | None], ...] = (
 
 _HOT_WATER: tuple[TrovisBinaryDescription, ...] = (
     _binary(
-        "hot_water", "charge_pump_running", "Charging", BinarySensorDeviceClass.HEAT
+        "hot_water",
+        "charge_pump_running",
+        "Charging",
+        BinarySensorDeviceClass.HEAT,
+        key="circuit4dhw_charge_pump_running",
     ),
     _binary(
         "hot_water",
         "disinfection_active",
         "Disinfection",
         BinarySensorDeviceClass.RUNNING,
+        key="circuit4dhw_disinfection_active",
     ),
     _binary(
         "hot_water",
         "circulation_pump_running",
         "Circulation pump",
         BinarySensorDeviceClass.RUNNING,
+        key="circuit4dhw_circulation_pump_running",
     ),
 )
 
@@ -87,7 +93,14 @@ async def async_setup_entry(
         for attribute, name, device_class in _CIRCUIT:
             entities.append(
                 TrovisBinarySensor(
-                    coordinator, _binary(component, attribute, name, device_class)
+                    coordinator,
+                    _binary(
+                        component,
+                        attribute,
+                        name,
+                        device_class,
+                        key=f"circuit{index}_{attribute}",
+                    ),
                 )
             )
     async_add_entities(entities)

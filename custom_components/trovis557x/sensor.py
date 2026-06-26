@@ -41,24 +41,36 @@ class TrovisSensorDescription(SensorEntityDescription):
 
 
 def _temp(
-    component: str, attribute: str, name: str, *, enabled: bool = True
+    component: str,
+    attribute: str,
+    name: str,
+    *,
+    key: str | None = None,
+    enabled: bool = True,
+    unit: str = UnitOfTemperature.CELSIUS,
 ) -> TrovisSensorDescription:
     return TrovisSensorDescription(
-        key=f"{component}_{attribute}",
+        key=key or attribute,
         name=name,
         component=component,
         attribute=attribute,
         device_class=SensorDeviceClass.TEMPERATURE,
-        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        native_unit_of_measurement=unit,
         state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
         entity_registry_enabled_default=enabled,
     )
 
 
-def _switch(component: str, attribute: str, name: str) -> TrovisSensorDescription:
+def _switch(
+    component: str,
+    attribute: str,
+    name: str,
+    *,
+    key: str | None = None,
+) -> TrovisSensorDescription:
     return TrovisSensorDescription(
-        key=f"{component}_{attribute}",
+        key=key or attribute,
         name=name,
         component=component,
         attribute=attribute,
@@ -68,39 +80,59 @@ def _switch(component: str, attribute: str, name: str) -> TrovisSensorDescriptio
     )
 
 
-# Global sensors.
 _GLOBAL: tuple[TrovisSensorDescription, ...] = (
-    _temp("sensors", "af1", "AF1 outside sensor 1"),
-    _temp("sensors", "af2", "AF2 outside sensor 2"),
+    _temp("sensors", "af1", "AF1 outside sensor 1", key="outside_temperature_1"),
+    _temp("sensors", "af2", "AF2 outside sensor 2", key="outside_temperature_2"),
 
-    _temp("sensors", "vf1", "VF1 flow sensor 1"),
-    _temp("sensors", "vf2", "VF2 flow sensor 2"),
-    _temp("sensors", "vf3", "VF3 flow sensor 3"),
-    _temp("sensors", "vf4", "VF4 flow sensor 4"),
+    _temp("sensors", "vf1", "VF1 flow sensor 1", key="flow_temperature_1"),
+    _temp("sensors", "vf2", "VF2 flow sensor 2", key="flow_temperature_2"),
+    _temp("sensors", "vf3", "VF3 flow sensor 3", key="flow_temperature_3"),
+    _temp("sensors", "vf4", "VF4 flow sensor 4", key="flow_temperature_4"),
 
-    _temp("sensors", "ruef1", "RüF1 return sensor 1"),
-    _temp("sensors", "ruef2", "RüF2 return sensor 2"),
-    _temp("sensors", "ruef3", "RüF3 return sensor 3"),
+    _temp("sensors", "ruef1", "RüF1 return sensor 1", key="return_temperature_1"),
+    _temp("sensors", "ruef2", "RüF2 return sensor 2", key="return_temperature_2"),
+    _temp("sensors", "ruef3", "RüF3 return sensor 3", key="return_temperature_3"),
 
-    _temp("sensors", "rf1", "RF1 room sensor 1"),
-    _temp("sensors", "rf2", "RF2 room sensor 2"),
-    _temp("sensors", "rf3", "RF3 room sensor 3"),
+    _temp("sensors", "rf1", "RF1 room sensor 1", key="room_temperature_1"),
+    _temp("sensors", "rf2", "RF2 room sensor 2", key="room_temperature_2"),
+    _temp("sensors", "rf3", "RF3 room sensor 3", key="room_temperature_3"),
 
-    _temp("sensors", "sf1", "SF1 hot water sensor 1"),
-    _temp("sensors", "sf2", "SF2 hot water sensor 2"),
-    _temp("sensors", "sf3_fg3", "SF3/FG3 hot water sensor / remote control 3"),
+    _temp("sensors", "sf1", "SF1 hot water sensor 1", key="dhw_storage_temperature"),
+    _temp(
+        "sensors",
+        "sf2",
+        "SF2 hot water sensor 2",
+        key="dhw_storage_temperature_lower",
+    ),
+    _temp(
+        "sensors",
+        "sf3_fg3",
+        "SF3/FG3 hot water sensor / remote control 3",
+        key="storage_remote_temperature",
+    ),
 
-    _temp("sensors", "fg1", "FG1 remote control 1"),
-    _temp("sensors", "fg2", "FG2 remote control 2"),
+    _temp(
+        "sensors",
+        "fg1",
+        "FG1 remote control 1",
+        key="remote_adjustment_1",
+        unit=UnitOfTemperature.KELVIN,
+    ),
+    _temp(
+        "sensors",
+        "fg2",
+        "FG2 remote control 2",
+        key="remote_adjustment_2",
+        unit=UnitOfTemperature.KELVIN,
+    ),
 
-    # _temp("controller", "max_flow_setpoint", "Max flow setpoint", enabled=False),
-    _temp("controller", "max_flow_setpoint", "Max flow setpoint"),
+    _temp("controller", "max_flow_setpoint", "Max flow setpoint", enabled=False),
     _switch("controller", "switch_top", "Switch top"),
     _switch("controller", "switch_middle", "Switch middle"),
     _switch("controller", "switch_bottom", "Switch bottom"),
 
     TrovisSensorDescription(
-        key="controller_error_status",
+        key="error_status",
         name="Error status",
         component="controller",
         attribute="error_status",
@@ -124,17 +156,16 @@ async def async_setup_entry(
             TrovisSensor(
                 coordinator,
                 TrovisSensorDescription(
-                    key=f"{component}_control_signal",
-                    name="Valve position",
+                    key=f"circuit{index}_valve_setpoint",
+                    name=f"Circuit {index} valve setpoint",
                     component=component,
-                    attribute="control_signal",
+                    attribute="valve_setpoint",
                     native_unit_of_measurement=PERCENTAGE,
                     state_class=SensorStateClass.MEASUREMENT,
                     entity_category=EntityCategory.DIAGNOSTIC,
                 ),
             )
         )
-
     async_add_entities(entities)
 
 

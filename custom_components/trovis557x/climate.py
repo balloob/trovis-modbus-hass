@@ -63,7 +63,7 @@ class TrovisHeatingCircuitClimate(TrovisEntity, ClimateEntity):
     def __init__(self, coordinator: TrovisCoordinator, index: int) -> None:
         super().__init__(
             coordinator,
-            key=f"climate_circuit_{index}",
+            key=f"climate_circuit{index}",
             component=f"heating_circuit_{index}",
             platform="climate",
         )
