@@ -46,11 +46,13 @@ def _temp(
     name: str,
     *,
     key: str | None = None,
+    translation_key: str | None = None,
     enabled: bool = True,
     unit: str = UnitOfTemperature.CELSIUS,
 ) -> TrovisSensorDescription:
     return TrovisSensorDescription(
         key=key or attribute,
+        translation_key=translation_key,
         name=name,
         component=component,
         attribute=attribute,
@@ -68,9 +70,11 @@ def _switch(
     name: str,
     *,
     key: str | None = None,
+    translation_key: str | None = None,
 ) -> TrovisSensorDescription:
     return TrovisSensorDescription(
         key=key or attribute,
+        translation_key=translation_key,
         name=name,
         component=component,
         attribute=attribute,
@@ -156,14 +160,16 @@ async def async_setup_entry(
             TrovisSensor(
                 coordinator,
                 TrovisSensorDescription(
-                    key=f"circuit{index}_valve_setpoint",
-                    name=f"Circuit {index} valve setpoint",
+                    key=f"rk{index}_valve_setpoint",
+                    translation_key="valve_setpoint",
+                    translation_placeholders={"rk": f"RK{index}"},
+                    name=f"Rk{index} valve setpoint",
                     component=component,
                     attribute="valve_setpoint",
                     native_unit_of_measurement=PERCENTAGE,
                     state_class=SensorStateClass.MEASUREMENT,
                     entity_category=EntityCategory.DIAGNOSTIC,
-                ),
+                )
             )
         )
     async_add_entities(entities)
@@ -177,7 +183,14 @@ class TrovisSensor(TrovisEntity, SensorEntity):
     def __init__(
         self, coordinator: TrovisCoordinator, description: TrovisSensorDescription
     ) -> None:
-        super().__init__(coordinator, description.key, description.component, "sensor")
+        super().__init__(
+            coordinator,
+            description.key,
+            description.component,
+            "sensor",
+            translation_key=description.translation_key,
+            translation_placeholders=description.translation_placeholders,
+        )
         self.entity_description = description
 
     @property

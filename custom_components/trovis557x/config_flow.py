@@ -7,7 +7,7 @@ from typing import Any
 
 import voluptuous as vol
 from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
-from homeassistant.const import CONF_DEVICE, CONF_HOST, CONF_PORT
+from homeassistant.const import CONF_DEVICE, CONF_HOST, CONF_NAME, CONF_PORT
 from homeassistant.helpers.selector import (
     NumberSelector,
     NumberSelectorConfig,
@@ -52,12 +52,17 @@ def _normalize_slug(value: object) -> str:
     return re.sub(r"_+", "_", slug).strip("_") or DEFAULT_SLUG
 
 
+def _normalize_name(value: object, fallback: str) -> str:
+    """Return a non-empty display name."""
+    name = str(value or "").strip()
+    return name or fallback
+
+
 STEP_NETWORK = vol.Schema(
     {
         vol.Required(CONF_HOST): str,
         vol.Required(CONF_PORT, default=DEFAULT_PORT): vol.Coerce(int),
         vol.Required(CONF_UNIT_ID, default=DEFAULT_UNIT_ID): _UNIT,
-        vol.Optional(CONF_SLUG, default=""): TextSelector(),
     }
 )
 
@@ -65,9 +70,18 @@ STEP_SERIAL = vol.Schema(
     {
         vol.Required(CONF_DEVICE): SerialPortSelector(),
         vol.Required(CONF_UNIT_ID, default=DEFAULT_UNIT_ID): _UNIT,
-        vol.Optional(CONF_SLUG, default=""): TextSelector(),
     }
 )
+
+
+def _device_schema(default_name: str, default_slug: str) -> vol.Schema:
+    """Return the second setup step schema with suggested device values."""
+    return vol.Schema(
+        {
+            vol.Required(CONF_NAME, default=default_name): TextSelector(),
+            vol.Required(CONF_SLUG, default=default_slug): TextSelector(),
+        }
+    )
 
 
 async def open_connection(data: dict[str, Any]) -> ModbusConnection:
@@ -99,6 +113,9 @@ class TrovisConfigFlow(ConfigFlow, domain=DOMAIN):
 
     VERSION = 1
 
+    _pending_data: dict[str, Any] | None = None
+    _detected_model: str | None = None
+
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
@@ -108,7 +125,7 @@ class TrovisConfigFlow(ConfigFlow, domain=DOMAIN):
     async def async_step_network(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Configure a Modbus TCP connection."""
+        """Configure a network RTU-over-TCP connection."""
         return await self._connection_step(
             CONNECTION_TCP, "network", STEP_NETWORK, user_input
         )
@@ -116,7 +133,7 @@ class TrovisConfigFlow(ConfigFlow, domain=DOMAIN):
     async def async_step_serial(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Configure a Modbus serial (RTU) connection."""
+        """Configure a Modbus serial RTU connection."""
         return await self._connection_step(
             CONNECTION_SERIAL, "serial", STEP_SERIAL, user_input
         )
@@ -129,24 +146,55 @@ class TrovisConfigFlow(ConfigFlow, domain=DOMAIN):
         user_input: dict[str, Any] | None,
     ) -> ConfigFlowResult:
         errors: dict[str, str] = {}
+
         if user_input is not None:
             data = {CONF_CONNECTION_TYPE: connection_type, **user_input}
-            title = await self._async_title(data)
-            if title is None:
+            detected_model = await self._async_detect_model(data)
+
+            if detected_model is None:
                 errors["base"] = "cannot_connect"
             else:
-                # If the user leaves the prefix empty, derive it from the
-                # detected model, e.g. "Trovis 5578" -> "trovis_5578".
-                data[CONF_SLUG] = _normalize_slug(data.get(CONF_SLUG) or title)
-                return self.async_create_entry(title=title, data=data)
+                self._pending_data = data
+                self._detected_model = detected_model
+                return await self.async_step_device()
+
         return self.async_show_form(step_id=step_id, data_schema=schema, errors=errors)
 
-    async def _async_title(self, data: dict[str, Any]) -> str | None:
-        """Connect and read the controller model for the entry title."""
+    async def async_step_device(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Let the user choose display name and entity ID prefix."""
+        if self._pending_data is None or self._detected_model is None:
+            return await self.async_step_user()
+
+        default_name = self._detected_model
+        default_slug = _normalize_slug(default_name)
+
+        if user_input is not None:
+            name = _normalize_name(user_input.get(CONF_NAME), default_name)
+            slug = _normalize_slug(user_input.get(CONF_SLUG) or name)
+
+            data = {
+                **self._pending_data,
+                CONF_NAME: name,
+                CONF_SLUG: slug,
+            }
+
+            return self.async_create_entry(title=name, data=data)
+
+        return self.async_show_form(
+            step_id="device",
+            data_schema=_device_schema(default_name, default_slug),
+            errors={},
+        )
+
+    async def _async_detect_model(self, data: dict[str, Any]) -> str | None:
+        """Connect and read the controller model for setup suggestions."""
         try:
             connection = await open_connection(data)
         except (ModbusError, OSError, ValueError):
             return None
+
         try:
             device = Trovis557x(connection.for_unit(int(data[CONF_UNIT_ID])))
             await device.info.async_update()

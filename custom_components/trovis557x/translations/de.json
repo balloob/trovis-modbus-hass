@@ -1,0 +1,113 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "description": "Wie ist der Regler verbunden?",
+        "menu_options": {
+          "network": "Netzwerk (Modbus TCP)",
+          "serial": "Seriell (Modbus RTU)"
+        }
+      },
+      "network": {
+        "title": "Network connection",
+        "data": {
+          "host": "Host",
+          "port": "Port",
+          "unit_id": "Modbus Unit"
+        },
+        "data_description": {
+          "host": "Hostname oder IP-Adresse des Modbus-Gateways oder Geräts.",
+          "port": "TCP-Port, auf dem das Modbus-Gateway erreichbar ist (Standard: 502).",
+          "unit_id": "Modbus-Stationsadresse des Reglers (PA1; Standard: 246)."
+        }
+      },
+      "serial": {
+        "title": "Serial connection",
+        "data": {
+          "device": "Serial port",
+          "unit_id": "Modbus Unit"
+        },
+        "data_description": {
+          "device": "Serielle Schnittstelle, an die der Regler angeschlossen ist. Die Verbindung ist fest auf 19200 Baud, 8N1 eingestellt.",
+          "unit_id": "Modbus-Stationsadresse des Reglers (PA1; Standard: 246)."
+        }
+      },
+      "device": {
+        "title": "Geräteeinstellungen",
+        "data": {
+          "name": "Eindeutiger Name",
+          "slug": "Entity ID prefix"
+        },
+        "data_description": {
+          "name": "Eindeutiger Anzeigename für diesen Regler, z. B. 'Samson Trovis'. Verwende bei mehreren Reglern unterschiedliche Namen.",
+          "slug": "Prefix für generierte Entitäts-IDs, z. B. 't5573'. Daraus entstehen IDs wie 'sensor.t5573_outside_temperature'."
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Verbindung fehlgeschlagen. Prüfe die Verbindungsdaten und ob der Regler erreichbar ist."
+    }
+  },
+  "device": {
+    "rk1": { "name": "RK1 - Heizkreis 1" },
+    "rk2": { "name": "RK2 - Heizkreis 2" },
+    "rk3": { "name": "RK3 - Heizkreis 3" },
+    "rk4dhw": { "name": "RK4 / WW - Warmwasser" },
+    "measurements": { "name": "Messwerte" }
+  },
+  "entity": {
+    "sensor": {
+      "outside_temperature_1": { "name": "AF1 Außenfühler 1" },
+      "outside_temperature_2": { "name": "AF2 Außenfühler 2" },
+
+      "flow_temperature_1": { "name": "VF1 Vorlauffühler 1" },
+      "flow_temperature_2": { "name": "VF2 Vorlauffühler 2" },
+      "flow_temperature_3": { "name": "VF3 Vorlauffühler 3" },
+      "flow_temperature_4": { "name": "VF4 Vorlauffühler 4" },
+
+      "return_temperature_1": { "name": "RüF1 Rücklauffühler 1" },
+      "return_temperature_2": { "name": "RüF2 Rücklauffühler 2" },
+      "return_temperature_3": { "name": "RüF3 Rücklauffühler 3" },
+
+      "room_temperature_1": { "name": "RF1 Raumfühler 1" },
+      "room_temperature_2": { "name": "RF2 Raumfühler 2" },
+      "room_temperature_3": { "name": "RF3 Raumfühler 3" },
+
+      "dhw_storage_temperature": { "name": "SF1 Speicherfühler 1" },
+      "dhw_storage_temperature_lower": { "name": "SF2 Speicherfühler 2" },
+      "storage_remote_temperature": { "name": "SF3/FG3 Speicherfühler/Ferngeber 3" },
+
+      "remote_adjustment_1": { "name": "FG1 Ferngeber 1" },
+      "remote_adjustment_2": { "name": "FG2 Ferngeber 2" },
+
+      "valve_setpoint": { "name": "{rk} Ventil-Stellvorgabe" },
+
+      "error_status": { "name": "Fehlerstatus" },
+      "max_flow_setpoint": { "name": "Maximaler Vorlauf-Sollwert" },
+
+      "switch_top": { "name": "Schalter oben" },
+      "switch_middle": { "name": "Schalter Mitte" },
+      "switch_bottom": { "name": "Schalter unten" }
+    },
+    "binary_sensor": {
+      "general_fault": { "name": "Sammelstörung" },
+      "summer_active": { "name": "Sommerbetrieb" },
+
+      "pump_running": { "name": "{rk} Pumpe" },
+      "frost_protection": { "name": "{rk} Frostschutz" },
+      "standby": { "name": "{rk} Standby" },
+
+      "charge_pump_running": { "name": "{rk} Ladepumpe" },
+      "disinfection_active": { "name": "{rk} Desinfektion" },
+      "circulation_pump_running": { "name": "{rk} Zirkulationspumpe" }
+    },
+    "climate": {
+      "rk1": { "name": "Rk1 - Heizkreis 1" },
+      "rk2": { "name": "Rk2 - Heizkreis 2" },
+      "rk3": { "name": "Rk3 - Heizkreis 3" }
+    },
+    "water_heater": {
+      "circuit4dhw": { "name": "Rk4 - Warmwasser" }
+    }
+  }
+}

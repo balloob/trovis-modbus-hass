@@ -32,9 +32,13 @@ def _binary(
     device_class: BinarySensorDeviceClass | None = None,
     *,
     key: str | None = None,
+    translation_key: str | None = None,
+    translation_placeholders: dict[str, str] | None = None,
 ) -> TrovisBinaryDescription:
     return TrovisBinaryDescription(
         key=key or f"{component}_{attribute}",
+        translation_key=translation_key,
+        translation_placeholders=translation_placeholders,
         name=name,
         component=component,
         attribute=attribute,
@@ -59,23 +63,29 @@ _HOT_WATER: tuple[TrovisBinaryDescription, ...] = (
     _binary(
         "hot_water",
         "charge_pump_running",
-        "Charging",
+        "Charge pump",
         BinarySensorDeviceClass.HEAT,
-        key="circuit4dhw_charge_pump_running",
+        key="rk4dhw_charge_pump_running",
+        translation_key="charge_pump_running",
+        translation_placeholders={"rk": "RK4/WW"},
     ),
     _binary(
         "hot_water",
         "disinfection_active",
         "Disinfection",
         BinarySensorDeviceClass.RUNNING,
-        key="circuit4dhw_disinfection_active",
+        key="rk4dhw_disinfection_active",
+        translation_key="disinfection_active",
+        translation_placeholders={"rk": "RK4/WW"},
     ),
     _binary(
         "hot_water",
         "circulation_pump_running",
         "Circulation pump",
         BinarySensorDeviceClass.RUNNING,
-        key="circuit4dhw_circulation_pump_running",
+        key="rk4dhw_circulation_pump_running",
+        translation_key="circulation_pump_running",
+        translation_placeholders={"rk": "RK4/WW"},
     ),
 )
 
@@ -99,7 +109,9 @@ async def async_setup_entry(
                         attribute,
                         name,
                         device_class,
-                        key=f"circuit{index}_{attribute}",
+                        key=f"rk{index}_{attribute}",
+                        translation_key=attribute,
+                        translation_placeholders={"rk": f"RK{index}"},
                     ),
                 )
             )
@@ -114,7 +126,14 @@ class TrovisBinarySensor(TrovisEntity, BinarySensorEntity):
     def __init__(
         self, coordinator: TrovisCoordinator, description: TrovisBinaryDescription
     ) -> None:
-        super().__init__(coordinator, description.key, description.component, "binary_sensor")
+        super().__init__(
+            coordinator,
+            description.key,
+            description.component,
+            "binary_sensor",
+            translation_key=description.translation_key,
+            translation_placeholders=description.translation_placeholders,
+        )
         self.entity_description = description
 
     @property

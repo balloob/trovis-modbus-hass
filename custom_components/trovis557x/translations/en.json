@@ -13,32 +13,101 @@
         "data": {
           "host": "Host",
           "port": "Port",
-          "unit_id": "Modbus Unit",
-          "slug": "Entity ID prefix"
+          "unit_id": "Modbus Unit"
         },
         "data_description": {
           "host": "The hostname or IP address of the Modbus gateway or device.",
           "port": "The TCP port the Modbus gateway listens on (default 502).",
-          "unit_id": "The controller's Modbus station address (PA1; default 246).",
-          "slug": "Prefix for generated entity IDs, e.g. 'mytrovis' - this will result in IDs like e.g. sensor.mytrovis_af1."
+          "unit_id": "The controller's Modbus station address (PA1; default 246)."
         }
       },
       "serial": {
         "title": "Serial connection",
         "data": {
           "device": "Serial port",
-          "unit_id": "Modbus Unit",
-          "slug": "Entity ID prefix"
+          "unit_id": "Modbus Unit"
         },
         "data_description": {
           "device": "The serial port the controller is wired to. The line is fixed at 19200 baud, 8N1.",
-          "unit_id": "The controller's Modbus station address (PA1; default 246).",
-          "slug": "Prefix for generated entity IDs, e.g. 'mytrovis' - this will result in IDs like e.g. sensor.mytrovis_af1."
+          "unit_id": "The controller's Modbus station address (PA1; default 246)."
+        }
+      },
+      "device": {
+        "title": "Device setup",
+        "data": {
+          "name": "Unique name",
+          "slug": "Entity ID prefix"
+        },
+        "data_description": {
+          "name": "Unique display name for this controller, e.g. 'Samson Trovis'. Use a different name for each controller.",
+          "slug": "Prefix for generated entity IDs, e.g. 't5573'. This will result in IDs like 'sensor.t5573_outside_temperature_1'."
         }
       }
     },
     "error": {
       "cannot_connect": "Failed to connect. Check the connection details and that the controller is reachable."
+    }
+  },
+  "device": {
+    "rk1": { "name": "RK1 - Heating circuit 1" },
+    "rk2": { "name": "RK2 - Heating circuit 2" },
+    "rk3": { "name": "RK3 - Heating circuit 3" },
+    "rk4dhw": { "name": "RK4 / DHW - Domestic hot water" },
+    "measurements": { "name": "Measurements" }
+  },
+  "entity": {
+    "sensor": {
+      "outside_temperature_1": { "name": "AF1 outside sensor 1" },
+      "outside_temperature_2": { "name": "AF2 outside sensor 2" },
+
+      "flow_temperature_1": { "name": "VF1 flow sensor 1" },
+      "flow_temperature_2": { "name": "VF2 flow sensor 2" },
+      "flow_temperature_3": { "name": "VF3 flow sensor 3" },
+      "flow_temperature_4": { "name": "VF4 flow sensor 4" },
+
+      "return_temperature_1": { "name": "RüF1 return sensor 1" },
+      "return_temperature_2": { "name": "RüF2 return sensor 2" },
+      "return_temperature_3": { "name": "RüF3 return sensor 3" },
+
+      "room_temperature_1": { "name": "RF1 room sensor 1" },
+      "room_temperature_2": { "name": "RF2 room sensor 2" },
+      "room_temperature_3": { "name": "RF3 room sensor 3" },
+
+      "dhw_storage_temperature": { "name": "SF1 storage sensor 1" },
+      "dhw_storage_temperature_lower": { "name": "SF2 storage sensor 2" },
+      "storage_remote_temperature": { "name": "SF3/FG3 storage sensor / remote adjuster 3" },
+
+      "remote_adjustment_1": { "name": "FG1 remote adjuster 1" },
+      "remote_adjustment_2": { "name": "FG2 remote adjuster 2" },
+
+      "valve_setpoint": { "name": "{rk} valve setpoint" },
+
+      "error_status": { "name": "Error status" },
+      "max_flow_setpoint": { "name": "Max flow setpoint" },
+
+      "switch_top": { "name": "Switch top" },
+      "switch_middle": { "name": "Switch middle" },
+      "switch_bottom": { "name": "Switch bottom" }
+    },
+    "binary_sensor": {
+      "general_fault": { "name": "Fault" },
+      "summer_active": { "name": "Summer mode" },
+
+      "pump_running": { "name": "{rk} pump" },
+      "frost_protection": { "name": "{rk} frost protection" },
+      "standby": { "name": "{rk} standby" },
+
+      "charge_pump_running": { "name": "{rk} charge pump" },
+      "disinfection_active": { "name": "{rk} disinfection" },
+      "circulation_pump_running": { "name": "{rk} circulation pump" }
+    },
+    "climate": {
+      "rk1": { "name": "Rk1 - Heating circuit 1" },
+      "rk2": { "name": "Rk2 - Heating circuit 2" },
+      "rk3": { "name": "Rk3 - Heating circuit 3" }
+    },
+    "water_heater": {
+      "circuit4dhw": { "name": "Rk4 - Domestic Hot Water" }
     }
   }
 }

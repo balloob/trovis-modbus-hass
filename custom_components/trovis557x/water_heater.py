@@ -1,24 +1,24 @@
-"""Water heater platform — the domestic hot water circuit (HK4)."""
+"""Water heater platform - the domestic hot water circuit (Rk4)."""
 
 from __future__ import annotations
-
 from typing import Any
+from dataclasses import dataclass
 
-from homeassistant.components.water_heater import (
-    WaterHeaterEntity,
-    WaterHeaterEntityFeature,
-)
 from homeassistant.const import ATTR_TEMPERATURE, UnitOfTemperature
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
-from ._local_dev import apply_local_trovis_modbus_override
-
-apply_local_trovis_modbus_override()
+from homeassistant.components.water_heater import (
+    WaterHeaterEntity,
+    WaterHeaterEntityDescription,
+    WaterHeaterEntityFeature,
+)
 
 from trovis_modbus import HotWater, OperatingMode
-
 from .coordinator import TrovisConfigEntry, TrovisCoordinator
 from .entity import TrovisEntity
+from ._local_dev import apply_local_trovis_modbus_override
+apply_local_trovis_modbus_override()
+
 
 # Operation-list labels <-> controller modes.
 _MODES = {
@@ -27,6 +27,12 @@ _MODES = {
     "off": OperatingMode.STANDBY,
 }
 _REVERSE = {mode: label for label, mode in _MODES.items()}
+
+
+@dataclass(frozen=True, kw_only=True)
+class TrovisWaterHeaterDescription(WaterHeaterEntityDescription):
+    """Describes the domestic hot water entity."""
+    component: str
 
 
 async def async_setup_entry(
@@ -41,7 +47,7 @@ async def async_setup_entry(
 class TrovisHotWaterEntity(TrovisEntity, WaterHeaterEntity):
     """Domestic hot water as a water heater."""
 
-    _attr_name = None  # primary entity -> takes the sub-device's name
+    _attr_name = None
     _attr_temperature_unit = UnitOfTemperature.CELSIUS
     _attr_supported_features = (
         WaterHeaterEntityFeature.TARGET_TEMPERATURE
@@ -50,12 +56,19 @@ class TrovisHotWaterEntity(TrovisEntity, WaterHeaterEntity):
     _attr_operation_list = list(_MODES)
 
     def __init__(self, coordinator: TrovisCoordinator) -> None:
+        description = TrovisWaterHeaterDescription(
+            key="rk4dhw",
+            translation_key="rk4dhw",
+            component="hot_water",
+        )
         super().__init__(
             coordinator,
-            key="circuit4dhw",
-            component="hot_water",
+            key=description.key,
+            component=description.component,
             platform="water_heater",
+            translation_key=description.translation_key,
         )
+        self.entity_description = description
 
     @property
     def _hot_water(self) -> HotWater:
