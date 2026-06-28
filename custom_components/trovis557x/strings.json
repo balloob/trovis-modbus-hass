@@ -123,6 +123,15 @@
         "name": "{rk} operation mode",
         "state": {"standby": "Standby", "manual": "Manual", "day": "Sun", "night": "Moon"}
       }
+    },
+    "switch": {
+      "delayed_outside_temp_adjustment_falling": {"name": "Delayed outside-temp adjustment falling"},
+      "delayed_outside_temp_adjustment_rising": {"name": "Delayed outside-temp adjustment rising"},
+      "automatic_daylight_saving_time": {"name": "Automatic daylight-saving time"},
+      "optimization": {"name": "{rk} optimization"},
+      "adaptation": {"name": "{rk} adaptation"},
+      "room_control_unit": {"name": "{rk} room control unit 5570"},
+      "intermediate_heating_operation": {"name": "{rk} intermediate heating operation"}
     }
   }
 }

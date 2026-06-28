@@ -123,6 +123,16 @@
         "name": "{rk} Betriebsart",
         "state": {"standby": "Standby", "manual": "Hand", "day": "Sonne", "night": "Mond"}
       }
+    },
+    "switch": {
+      "delayed_outside_temp_adjustment_falling": {"name": "Verzögerte AT-Anpassung fallend"},
+      "delayed_outside_temp_adjustment_rising": {"name": "Verzögerte AT-Anpassung steigend"},
+      "automatic_daylight_saving_time": {"name": "Automatische Sommer-/Winterzeit"},
+      "optimization": {"name": "{rk} Optimierung"},
+      "adaptation": {"name": "{rk} Adaption"},
+      "room_control_unit": {"name": "{rk} Raumleitgerät 5570"},
+      "intermediate_heating_operation": {"name": "{rk} Zwischenheizbetrieb"
+      }
     }
   }
 }
