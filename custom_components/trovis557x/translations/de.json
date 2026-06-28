@@ -108,6 +108,15 @@
     },
     "water_heater": {
       "rk4dhw": { "name": "Rk4 - Warmwasser" }
+    },
+    "number": {
+      "year": { "name": "Aktuelles Jahr" },
+      "room_setpoint_day": { "name": "{rk} Raumsoll Tag" },
+      "room_setpoint_night": { "name": "{rk} Raumsoll Nacht" },
+      "slope": { "name": "{rk} Steigung" },
+      "level": { "name": "{rk} Niveau" },
+      "dhw_setpoint": { "name": "{rk} WW Sollwert Tag" },
+      "dhw_hold_value": { "name": "{rk} WW Haltewert Nacht" }
     }
   }
 }

@@ -25,6 +25,7 @@ from .coordinator import TrovisConfigEntry, TrovisCoordinator
 PLATFORMS = [
     Platform.BINARY_SENSOR,
     Platform.CLIMATE,
+    Platform.NUMBER,
     Platform.SENSOR,
     Platform.WATER_HEATER,
 ]

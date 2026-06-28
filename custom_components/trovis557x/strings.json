@@ -108,6 +108,15 @@
     },
     "water_heater": {
       "rk4dhw": { "name": "Rk4 - Domestic hot water" }
+    },
+    "number": {
+      "year": { "name": "Current year" },
+      "room_setpoint_day": { "name": "{rk} room setpoint day" },
+      "room_setpoint_night": { "name": "{rk} room setpoint night" },
+      "slope": { "name": "{rk} slope" },
+      "level": { "name": "{rk} level" },
+      "dhw_setpoint": { "name": "{rk} dhw setpoint day" },
+      "dhw_hold_value": { "name": "{rk} dhw setpoint night" }
     }
   }
 }
