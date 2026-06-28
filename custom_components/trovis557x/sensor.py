@@ -162,7 +162,7 @@ async def async_setup_entry(
                 TrovisSensorDescription(
                     key=f"rk{index}_valve_setpoint",
                     translation_key="valve_setpoint",
-                    translation_placeholders={"rk": f"RK{index}"},
+                    translation_placeholders={"rk": f"Rk{index}"},
                     name=f"Rk{index} valve setpoint",
                     component=component,
                     attribute="valve_setpoint",

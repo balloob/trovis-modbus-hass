@@ -67,7 +67,7 @@ _HOT_WATER: tuple[TrovisBinaryDescription, ...] = (
         BinarySensorDeviceClass.HEAT,
         key="rk4dhw_charge_pump_running",
         translation_key="charge_pump_running",
-        translation_placeholders={"rk": "RK4/WW"},
+        translation_placeholders={"rk": "Rk4"},
     ),
     _binary(
         "hot_water",
@@ -76,7 +76,7 @@ _HOT_WATER: tuple[TrovisBinaryDescription, ...] = (
         BinarySensorDeviceClass.RUNNING,
         key="rk4dhw_disinfection_active",
         translation_key="disinfection_active",
-        translation_placeholders={"rk": "RK4/WW"},
+        translation_placeholders={"rk": "Rk4"},
     ),
     _binary(
         "hot_water",
@@ -85,7 +85,7 @@ _HOT_WATER: tuple[TrovisBinaryDescription, ...] = (
         BinarySensorDeviceClass.RUNNING,
         key="rk4dhw_circulation_pump_running",
         translation_key="circulation_pump_running",
-        translation_placeholders={"rk": "RK4/WW"},
+        translation_placeholders={"rk": "Rk4"},
     ),
 )
 
@@ -111,7 +111,7 @@ async def async_setup_entry(
                         device_class,
                         key=f"rk{index}_{attribute}",
                         translation_key=attribute,
-                        translation_placeholders={"rk": f"RK{index}"},
+                        translation_placeholders={"rk": f"Rk{index}"},
                     ),
                 )
             )

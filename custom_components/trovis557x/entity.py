@@ -24,12 +24,12 @@ def _sub_device(component: str) -> tuple[str, str, str] | None:
         number = component.rsplit("_", 1)[1]
         return (
             f"rk{number}",
-            f"RK{number} - Heating circuit {number}",
+            f"Rk{number} - Heating circuit {number}",
             f"rk{number}",
         )
 
     if component == "hot_water":
-        return "rk4dhw", "RK4 / DHW - Domestic hot water", "rk4dhw"
+        return "rk4dhw", "Rk4 - Domestic hot water", "rk4dhw"
 
     return None
 

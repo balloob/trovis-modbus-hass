@@ -49,10 +49,10 @@
     }
   },
   "device": {
-    "rk1": { "name": "RK1 - Heizkreis 1" },
-    "rk2": { "name": "RK2 - Heizkreis 2" },
-    "rk3": { "name": "RK3 - Heizkreis 3" },
-    "rk4dhw": { "name": "RK4 / WW - Warmwasser" },
+    "rk1": { "name": "Rk1 - Heizkreis 1" },
+    "rk2": { "name": "Rk2 - Heizkreis 2" },
+    "rk3": { "name": "Rk3 - Heizkreis 3" },
+    "rk4dhw": { "name": "Rk4 - Warmwasser" },
     "measurements": { "name": "Messwerte" }
   },
   "entity": {
@@ -107,7 +107,7 @@
       "rk3": { "name": "Rk3 - Heizkreis 3" }
     },
     "water_heater": {
-      "circuit4dhw": { "name": "Rk4 - Warmwasser" }
+      "rk4dhw": { "name": "Rk4 - Warmwasser" }
     }
   }
 }

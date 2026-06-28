@@ -49,10 +49,10 @@
     }
   },
   "device": {
-    "rk1": { "name": "RK1 - Heating circuit 1" },
-    "rk2": { "name": "RK2 - Heating circuit 2" },
-    "rk3": { "name": "RK3 - Heating circuit 3" },
-    "rk4dhw": { "name": "RK4 / DHW - Domestic hot water" },
+    "rk1": { "name": "Rk1 - Heating circuit 1" },
+    "rk2": { "name": "Rk2 - Heating circuit 2" },
+    "rk3": { "name": "Rk3 - Heating circuit 3" },
+    "rk4dhw": { "name": "Rk4 - Domestic hot water" },
     "measurements": { "name": "Measurements" }
   },
   "entity": {
@@ -75,10 +75,10 @@
 
       "dhw_storage_temperature": { "name": "SF1 storage sensor 1" },
       "dhw_storage_temperature_lower": { "name": "SF2 storage sensor 2" },
-      "storage_remote_temperature": { "name": "SF3/FG3 storage sensor / remote adjuster 3" },
+      "storage_remote_temperature": { "name": "SF3/FG3 storage sensor / remote control 3" },
 
-      "remote_adjustment_1": { "name": "FG1 remote adjuster 1" },
-      "remote_adjustment_2": { "name": "FG2 remote adjuster 2" },
+      "remote_adjustment_1": { "name": "FG1 remote control 1" },
+      "remote_adjustment_2": { "name": "FG2 remote control 2" },
 
       "valve_setpoint": { "name": "{rk} valve setpoint" },
 
@@ -107,7 +107,7 @@
       "rk3": { "name": "Rk3 - Heating circuit 3" }
     },
     "water_heater": {
-      "circuit4dhw": { "name": "Rk4 - Domestic Hot Water" }
+      "rk4dhw": { "name": "Rk4 - Domestic hot water" }
     }
   }
 }
