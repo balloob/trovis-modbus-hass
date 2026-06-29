@@ -6,6 +6,7 @@ from typing import Any
 
 from homeassistant.const import ATTR_TEMPERATURE, UnitOfTemperature
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.components.climate import (
     ClimateEntity,
@@ -15,7 +16,14 @@ from homeassistant.components.climate import (
     HVACMode,
 )
 
-from trovis_modbus import HeatingCircuit, OperatingMode
+from trovis_modbus import (
+    HeatingCircuit,
+    OperatingMode,
+    TrovisWriteAccessDisabledError,
+    TrovisWriteAccessError,
+    TrovisWriteNotImplementedError,
+)
+
 from .coordinator import TrovisConfigEntry, TrovisCoordinator
 from .entity import TrovisEntity
 from ._local_dev import apply_local_trovis_modbus_override
@@ -107,6 +115,7 @@ class TrovisHeatingCircuitClimate(TrovisEntity, ClimateEntity):
         mode = self._circuit.mode
         return _TO_HVAC.get(mode) if mode is not None else None
 
+
     @property
     def hvac_action(self) -> HVACAction | None:
         if self._circuit.mode is OperatingMode.STANDBY:
@@ -115,11 +124,50 @@ class TrovisHeatingCircuitClimate(TrovisEntity, ClimateEntity):
             return None
         return HVACAction.HEATING if self._circuit.pump_running else HVACAction.IDLE
 
+
     async def async_set_temperature(self, **kwargs: Any) -> None:
-        if (temperature := kwargs.get(ATTR_TEMPERATURE)) is not None:
-            await self._circuit.set_room_setpoint_day(temperature)
-            await self.coordinator.async_request_refresh()
+        """Set a new target temperature."""
+        if (temperature := kwargs.get(ATTR_TEMPERATURE)) is None:
+            return
+
+        if not self.coordinator.device.writing_enabled:
+            raise HomeAssistantError("Please enable writing for changes!")
+
+        try:
+            await self._circuit.async_write_datapoint(
+                "room_setpoint_day",
+                temperature,
+                access_code=self.coordinator.access_code,
+            )
+        except (TrovisWriteAccessDisabledError, TrovisWriteAccessError) as err:
+            raise HomeAssistantError(str(err)) from err
+        except TrovisWriteNotImplementedError as err:
+            raise HomeAssistantError(
+                "Writing TROVIS data points is not implemented yet"
+            ) from err
+
+        await self.coordinator.async_request_refresh()
+
 
     async def async_set_hvac_mode(self, hvac_mode: HVACMode) -> None:
-        await self._circuit.set_mode(_FROM_HVAC[hvac_mode])
+        """Set a new HVAC mode."""
+        if hvac_mode not in _FROM_HVAC:
+            raise HomeAssistantError(f"Unsupported TROVIS HVAC mode: {hvac_mode}")
+
+        if not self.coordinator.device.writing_enabled:
+            raise HomeAssistantError("Please enable writing for changes!")
+
+        try:
+            await self._circuit.async_write_datapoint(
+                "mode",
+                _FROM_HVAC[hvac_mode],
+                access_code=self.coordinator.access_code,
+            )
+        except (TrovisWriteAccessDisabledError, TrovisWriteAccessError) as err:
+            raise HomeAssistantError(str(err)) from err
+        except TrovisWriteNotImplementedError as err:
+            raise HomeAssistantError(
+                "Writing TROVIS data points is not implemented yet"
+            ) from err
+
         await self.coordinator.async_request_refresh()

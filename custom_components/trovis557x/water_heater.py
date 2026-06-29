@@ -6,6 +6,7 @@ from dataclasses import dataclass
 
 from homeassistant.const import ATTR_TEMPERATURE, UnitOfTemperature
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.components.water_heater import (
     WaterHeaterEntity,
@@ -13,7 +14,14 @@ from homeassistant.components.water_heater import (
     WaterHeaterEntityFeature,
 )
 
-from trovis_modbus import HotWater, OperatingMode
+from trovis_modbus import (
+    HotWater,
+    OperatingMode,
+    TrovisWriteAccessDisabledError,
+    TrovisWriteAccessError,
+    TrovisWriteNotImplementedError,
+)
+
 from .coordinator import TrovisConfigEntry, TrovisCoordinator
 from .entity import TrovisEntity
 from ._local_dev import apply_local_trovis_modbus_override
@@ -70,35 +78,82 @@ class TrovisHotWaterEntity(TrovisEntity, WaterHeaterEntity):
         )
         self.entity_description = description
 
+
     @property
     def _hot_water(self) -> HotWater:
         return self._subsystem  # type: ignore[return-value]
+
 
     @property
     def current_temperature(self) -> float | None:
         return self.coordinator.data.sensors.sf1
 
+
     @property
     def target_temperature(self) -> float | None:
         return self._hot_water.setpoint_active
+
 
     @property
     def min_temp(self) -> float:
         return self._hot_water.setpoint_min or 20.0
 
+
     @property
     def max_temp(self) -> float:
         return self._hot_water.setpoint_max or 90.0
+
 
     @property
     def current_operation(self) -> str | None:
         return _REVERSE.get(self._hot_water.mode)
 
+
     async def async_set_temperature(self, **kwargs: Any) -> None:
-        if (temperature := kwargs.get(ATTR_TEMPERATURE)) is not None:
-            await self._hot_water.set_setpoint(temperature)
-            await self.coordinator.async_request_refresh()
+        """Set a new target temperature."""
+        if (temperature := kwargs.get(ATTR_TEMPERATURE)) is None:
+            return
+
+        if not self.coordinator.device.writing_enabled:
+            raise HomeAssistantError("Please enable writing for changes!")
+
+        try:
+            await self._hot_water.async_write_datapoint(
+                "setpoint_day",
+                temperature,
+                access_code=self.coordinator.access_code,
+            )
+        except (TrovisWriteAccessDisabledError, TrovisWriteAccessError) as err:
+            raise HomeAssistantError(str(err)) from err
+        except TrovisWriteNotImplementedError as err:
+            raise HomeAssistantError(
+                "Writing TROVIS data points is not implemented yet"
+            ) from err
+
+        await self.coordinator.async_request_refresh()
+
 
     async def async_set_operation_mode(self, operation_mode: str) -> None:
-        await self._hot_water.set_mode(_MODES[operation_mode])
+        """Set a new operation mode."""
+        if operation_mode not in _MODES:
+            raise HomeAssistantError(
+                f"Unsupported TROVIS operation mode: {operation_mode}"
+            )
+
+        if not self.coordinator.device.writing_enabled:
+            raise HomeAssistantError("Please enable writing for changes!")
+
+        try:
+            await self._hot_water.async_write_datapoint(
+                "mode",
+                _MODES[operation_mode],
+                access_code=self.coordinator.access_code,
+            )
+        except (TrovisWriteAccessDisabledError, TrovisWriteAccessError) as err:
+            raise HomeAssistantError(str(err)) from err
+        except TrovisWriteNotImplementedError as err:
+            raise HomeAssistantError(
+                "Writing TROVIS data points is not implemented yet"
+            ) from err
+
         await self.coordinator.async_request_refresh()

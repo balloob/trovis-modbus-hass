@@ -36,11 +36,13 @@
         "title": "Device setup",
         "data": {
           "name": "Unique name",
-          "slug": "Entity ID prefix"
+          "slug": "Entity ID prefix",
+          "access_code": "Access code"
         },
         "data_description": {
           "name": "Unique display name for this controller, e.g. 'Samson Trovis'. Use a different name for each controller.",
-          "slug": "Prefix for generated entity IDs, e.g. 't5573'. This will result in IDs like 'sensor.t5573_outside_temperature_1'."
+          "slug": "Prefix for generated entity IDs, e.g. 't5573'. This will result in IDs like 'sensor.t5573_outside_temperature_1'.",
+          "access_code": "The number code for write access (see last page in the device manual)."
         }
       }
     },
@@ -125,6 +127,7 @@
       }
     },
     "switch": {
+      "write_access": {"name": "Write access"},
       "delayed_outside_temp_adjustment_falling": {"name": "Delayed outside-temp adjustment falling"},
       "delayed_outside_temp_adjustment_rising": {"name": "Delayed outside-temp adjustment rising"},
       "automatic_daylight_saving_time": {"name": "Automatic daylight-saving time"},

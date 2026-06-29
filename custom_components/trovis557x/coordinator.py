@@ -12,9 +12,9 @@ from ._local_dev import apply_local_trovis_modbus_override
 
 apply_local_trovis_modbus_override()
 
-from trovis_modbus import Trovis557x
+from trovis_modbus import Trovis557x, DEFAULT_WRITE_ACCESS_CODE
 
-from .const import DOMAIN, SCAN_INTERVAL
+from .const import DOMAIN, SCAN_INTERVAL, CONF_ACCESS_CODE
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -44,6 +44,16 @@ class TrovisCoordinator(DataUpdateCoordinator[Trovis557x]):
         )
         self.connection = connection
         self.device = device
+
+    @property
+    def access_code(self) -> int:
+        """Return the configured TROVIS write access code."""
+        return int(
+            self.config_entry.data.get(
+                CONF_ACCESS_CODE,
+                DEFAULT_WRITE_ACCESS_CODE,
+            )
+        )
 
     async def _async_update_data(self) -> Trovis557x:
         try:

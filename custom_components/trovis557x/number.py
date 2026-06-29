@@ -19,7 +19,11 @@ from homeassistant.helpers.entity import EntityCategory
 from ._local_dev import apply_local_trovis_modbus_override
 apply_local_trovis_modbus_override()
 
-from trovis_modbus import TrovisWriteNotImplementedError
+from trovis_modbus import (
+    TrovisWriteAccessDisabledError,
+    TrovisWriteAccessError,
+    TrovisWriteNotImplementedError,
+)
 from .coordinator import TrovisConfigEntry, TrovisCoordinator
 from .entity import TrovisEntity
 
@@ -185,18 +189,26 @@ class TrovisNumber(TrovisEntity, NumberEntity):
         )
         self.entity_description = description
 
+
     @property
     def native_value(self) -> float | int | None:
         """Return the current value."""
         return getattr(self._subsystem, self.entity_description.field)
 
+
     async def async_set_native_value(self, value: float) -> None:
         """Set a new value."""
+        if not self.coordinator.device.writing_enabled:
+            raise HomeAssistantError("Please enable writing for changes!")
+
         try:
             await self._subsystem.async_write_datapoint(
                 self.entity_description.field,
                 value,
+                access_code=self.coordinator.access_code,
             )
+        except (TrovisWriteAccessDisabledError, TrovisWriteAccessError) as err:
+            raise HomeAssistantError(str(err)) from err
         except TrovisWriteNotImplementedError as err:
             raise HomeAssistantError(
                 "Writing TROVIS data points is not implemented yet"

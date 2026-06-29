@@ -36,11 +36,13 @@
         "title": "Geräteeinstellungen",
         "data": {
           "name": "Eindeutiger Name",
-          "slug": "Entity ID prefix"
+          "slug": "Entity ID prefix",
+          "access_code": "Schlüsselzahl"
         },
         "data_description": {
           "name": "Eindeutiger Anzeigename für diesen Regler, z. B. 'Samson Trovis'. Verwende bei mehreren Reglern unterschiedliche Namen.",
-          "slug": "Prefix für generierte Entitäts-IDs, z. B. 't5573'. Daraus entstehen IDs wie 'sensor.t5573_outside_temperature'."
+          "slug": "Prefix für generierte Entitäts-IDs, z. B. 't5573'. Daraus entstehen IDs wie 'sensor.t5573_outside_temperature'.",
+          "access_code": "Die Schlüsselzahl für Schreibzugriff (siehe letzte Seite im Gerätehandbuch)."
         }
       }
     },
@@ -125,6 +127,7 @@
       }
     },
     "switch": {
+      "write_access": {"name": "Schreibzugriff"},
       "delayed_outside_temp_adjustment_falling": {"name": "Verzögerte AT-Anpassung fallend"},
       "delayed_outside_temp_adjustment_rising": {"name": "Verzögerte AT-Anpassung steigend"},
       "automatic_daylight_saving_time": {"name": "Automatische Sommer-/Winterzeit"},

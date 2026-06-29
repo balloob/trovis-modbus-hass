@@ -6,7 +6,7 @@
   "documentation": "https://github.com/Tom-Bom-badil/trovis-modbus-hass",
   "integration_type": "device",
   "iot_class": "local_polling",
-  "loggers": ["modbus_connection", "trovis_modbus", "tmodbus"],
+  "loggers": ["modbus_connection", "trovis_modbus", "tmodbus", "pymodbus"],
   "requirements": ["trovis-modbus>=1.0.0", "modbus-connection[tmodbus]==3.0.0"],
   "version": "0.1.1"
 }

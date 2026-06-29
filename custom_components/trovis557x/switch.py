@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import logging
+
 from dataclasses import dataclass
 
 from homeassistant.components.switch import SwitchEntity, SwitchEntityDescription
@@ -11,13 +13,19 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from ._local_dev import apply_local_trovis_modbus_override
-
 apply_local_trovis_modbus_override()
 
-from trovis_modbus import TrovisWriteNotImplementedError
+from trovis_modbus import (
+    TrovisWriteAccessDisabledError,
+    TrovisWriteAccessError,
+    TrovisWriteNotImplementedError,
+)
 
 from .coordinator import TrovisConfigEntry, TrovisCoordinator
 from .entity import TrovisEntity
+
+
+_LOGGER = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -115,9 +123,11 @@ async def async_setup_entry(
     """Set up Trovis switch entities."""
     coordinator = entry.runtime_data
 
-    entities: list[TrovisSwitch] = [
-        TrovisSwitch(coordinator, description) for description in _CONTROLLER
-    ]
+    entities: list[SwitchEntity] = [TrovisWriteAccessSwitch(coordinator)]
+    entities.extend(
+        TrovisSwitch(coordinator, description)
+        for description in _CONTROLLER
+    )
 
     for index in (1, 2, 3):
         entities.extend(
@@ -128,6 +138,52 @@ async def async_setup_entry(
     entities.extend(TrovisSwitch(coordinator, description) for description in _HOT_WATER)
 
     async_add_entities(entities)
+
+
+class TrovisWriteAccessSwitch(TrovisEntity, SwitchEntity):
+    """Root switch that enables or disables TROVIS write access."""
+
+    _attr_icon = "mdi:pencil-lock"
+
+    def __init__(self, coordinator: TrovisCoordinator) -> None:
+        super().__init__(
+            coordinator,
+            "write_access",
+            "controller",
+            "switch",
+            translation_key="write_access",
+        )
+
+    @property
+    def is_on(self) -> bool | None:
+        """Return whether TROVIS writing is enabled."""
+        return self.coordinator.device.writing_enabled
+
+
+    async def async_turn_on(self, **kwargs: object) -> None:
+        """Enable TROVIS writing."""
+        try:
+            await self.coordinator.device.async_enable_writing(
+                access_code=self.coordinator.access_code,
+            )
+        except TrovisWriteAccessError as err:
+            raise HomeAssistantError(str(err)) from err
+
+        await self.coordinator.async_request_refresh()
+
+
+    async def async_turn_off(self, **kwargs: object) -> None:
+        """Disable TROVIS writing."""
+        try:
+            await self.coordinator.device.async_disable_writing()
+        except TrovisWriteAccessError as err:
+            _LOGGER.debug(
+                "Controller rejected resetting TROVIS write access; "
+                "disabling the HA write gate only",
+                exc_info=err,
+            )
+
+        await self.coordinator.async_request_refresh()
 
 
 class TrovisSwitch(TrovisEntity, SwitchEntity):
@@ -168,11 +224,17 @@ class TrovisSwitch(TrovisEntity, SwitchEntity):
 
     async def _async_set_switch(self, value: bool) -> None:
         """Set the switch state."""
+        if not self.coordinator.device.writing_enabled:
+            raise HomeAssistantError("Please enable writing for changes!")
+
         try:
             await self._subsystem.async_write_datapoint(
                 self.entity_description.field,
                 value,
+                access_code=self.coordinator.access_code,
             )
+        except (TrovisWriteAccessDisabledError, TrovisWriteAccessError) as err:
+            raise HomeAssistantError(str(err)) from err
         except TrovisWriteNotImplementedError as err:
             raise HomeAssistantError(
                 "Writing TROVIS data points is not implemented yet"

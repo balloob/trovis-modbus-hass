@@ -17,15 +17,20 @@ from homeassistant.helpers.selector import (
 )
 from homeassistant.util import slugify
 from modbus_connection import ModbusConnection, ModbusError
+
+# pymodbus
+# from modbus_connection.pymodbus import connect_serial, connect_tcp
+# tmodbus
 from modbus_connection.tmodbus import connect_serial, connect_tcp
 
 from ._local_dev import apply_local_trovis_modbus_override
 
 apply_local_trovis_modbus_override()
 
-from trovis_modbus import Trovis557x
+from trovis_modbus import Trovis557x, DEFAULT_WRITE_ACCESS_CODE
 
 from .const import (
+    CONF_ACCESS_CODE,
     CONF_CONNECTION_TYPE,
     CONF_SLUG,
     CONF_UNIT_ID,
@@ -43,6 +48,10 @@ from .const import (
 
 _UNIT = NumberSelector(
     NumberSelectorConfig(min=1, max=255, step=1, mode=NumberSelectorMode.BOX)
+)
+
+_ACCESS_CODE = NumberSelector(
+    NumberSelectorConfig(min=0, max=9999, step=1, mode=NumberSelectorMode.BOX)
 )
 
 
@@ -80,6 +89,10 @@ def _device_schema(default_name: str, default_slug: str) -> vol.Schema:
         {
             vol.Required(CONF_NAME, default=default_name): TextSelector(),
             vol.Required(CONF_SLUG, default=default_slug): TextSelector(),
+            vol.Required(
+                CONF_ACCESS_CODE,
+                default=DEFAULT_WRITE_ACCESS_CODE,
+            ): _ACCESS_CODE,
         }
     )
 
@@ -95,6 +108,8 @@ async def open_connection(data: dict[str, Any]) -> ModbusConnection:
     """
     unit_id = int(data[CONF_UNIT_ID])
     if data[CONF_CONNECTION_TYPE] == CONNECTION_SERIAL:
+
+        # tmodbus:
         return await connect_serial(
             data[CONF_DEVICE],
             baudrate=SERIAL_BAUDRATE,
@@ -106,6 +121,18 @@ async def open_connection(data: dict[str, Any]) -> ModbusConnection:
     return await connect_tcp(
         data[CONF_HOST], port=data[CONF_PORT], unit_id=unit_id, framer="rtu"
     )
+
+    #     # pymodbus:
+    #     return await connect_serial(
+    #         data[CONF_DEVICE],
+    #         baudrate=SERIAL_BAUDRATE,
+    #         bytesize=SERIAL_BYTESIZE,
+    #         parity=SERIAL_PARITY,
+    #         stopbits=SERIAL_STOPBITS,
+    #     )
+    # return await connect_tcp(
+    #     data[CONF_HOST],port=data[CONF_PORT], framer="rtu",
+    # )
 
 
 class TrovisConfigFlow(ConfigFlow, domain=DOMAIN):
@@ -173,11 +200,15 @@ class TrovisConfigFlow(ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             name = _normalize_name(user_input.get(CONF_NAME), default_name)
             slug = _normalize_slug(user_input.get(CONF_SLUG) or name)
+            access_code = int(
+                user_input.get(CONF_ACCESS_CODE, DEFAULT_WRITE_ACCESS_CODE)
+            )
 
             data = {
                 **self._pending_data,
                 CONF_NAME: name,
                 CONF_SLUG: slug,
+                CONF_ACCESS_CODE: access_code,
             }
 
             return self.async_create_entry(title=name, data=data)

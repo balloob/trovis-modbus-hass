@@ -11,11 +11,14 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 
 from ._local_dev import apply_local_trovis_modbus_override
-
 apply_local_trovis_modbus_override()
 
-from trovis_modbus import TrovisWriteNotImplementedError
 from trovis_modbus.enums import OperatingMode
+from trovis_modbus import (
+    TrovisWriteAccessDisabledError,
+    TrovisWriteAccessError,
+    TrovisWriteNotImplementedError,
+)
 
 from .coordinator import TrovisConfigEntry, TrovisCoordinator
 from .entity import TrovisEntity
@@ -105,6 +108,7 @@ class TrovisSelect(TrovisEntity, SelectEntity):
         self.entity_description = description
         self._attr_options = description.options
 
+
     @property
     def current_option(self) -> str | None:
         """Return the currently selected option."""
@@ -120,16 +124,23 @@ class TrovisSelect(TrovisEntity, SelectEntity):
 
         return OPERATION_MODE_BY_VALUE.get(mode)
 
+
     async def async_select_option(self, option: str) -> None:
         """Select an option."""
         if option not in OPERATION_MODE_OPTIONS:
             raise HomeAssistantError(f"Unsupported TROVIS option: {option}")
 
+        if not self.coordinator.device.writing_enabled:
+            raise HomeAssistantError("Please enable writing for changes!")
+
         try:
             await self._subsystem.async_write_datapoint(
                 self.entity_description.field,
                 OPERATION_MODE_OPTIONS[option],
+                access_code=self.coordinator.access_code,
             )
+        except (TrovisWriteAccessDisabledError, TrovisWriteAccessError) as err:
+            raise HomeAssistantError(str(err)) from err
         except TrovisWriteNotImplementedError as err:
             raise HomeAssistantError(
                 "Writing TROVIS data points is not implemented yet"
