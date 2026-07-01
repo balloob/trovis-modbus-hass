@@ -22,8 +22,10 @@ from trovis_modbus import (
     TrovisWriteAccessDisabledError,
     TrovisWriteAccessError,
     TrovisWriteNotImplementedError,
+    TrovisValueValidationError,
 )
 
+from .metadata import ha_unit_from_number, require_number_metadata
 from .coordinator import TrovisConfigEntry, TrovisCoordinator
 from .entity import TrovisEntity
 from ._local_dev import apply_local_trovis_modbus_override
@@ -88,6 +90,14 @@ class TrovisHeatingCircuitClimate(TrovisEntity, ClimateEntity):
             translation_key=description.translation_key,
         )
         self.entity_description = description
+        target_metadata = require_number_metadata(self._circuit, "room_setpoint_day")
+
+        self._attr_min_temp = target_metadata.min_value
+        self._attr_max_temp = target_metadata.max_value
+        self._attr_target_temperature_step = target_metadata.step
+        self._attr_temperature_unit = (
+            ha_unit_from_number(target_metadata) or UnitOfTemperature.CELSIUS
+        )
 
     @property
     def _circuit(self) -> HeatingCircuit:
@@ -139,7 +149,11 @@ class TrovisHeatingCircuitClimate(TrovisEntity, ClimateEntity):
                 temperature,
                 access_code=self.coordinator.access_code,
             )
-        except (TrovisWriteAccessDisabledError, TrovisWriteAccessError) as err:
+        except (
+            TrovisWriteAccessDisabledError,
+            TrovisWriteAccessError,
+            TrovisValueValidationError,
+        ) as err:
             raise HomeAssistantError(str(err)) from err
         except TrovisWriteNotImplementedError as err:
             raise HomeAssistantError(
@@ -163,7 +177,11 @@ class TrovisHeatingCircuitClimate(TrovisEntity, ClimateEntity):
                 _FROM_HVAC[hvac_mode],
                 access_code=self.coordinator.access_code,
             )
-        except (TrovisWriteAccessDisabledError, TrovisWriteAccessError) as err:
+        except (
+            TrovisWriteAccessDisabledError,
+            TrovisWriteAccessError,
+            TrovisValueValidationError,
+        ) as err:
             raise HomeAssistantError(str(err)) from err
         except TrovisWriteNotImplementedError as err:
             raise HomeAssistantError(

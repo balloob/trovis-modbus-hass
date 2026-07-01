@@ -20,8 +20,14 @@ from trovis_modbus import (
     TrovisWriteAccessDisabledError,
     TrovisWriteAccessError,
     TrovisWriteNotImplementedError,
+    TrovisValueValidationError
 )
 
+from .metadata import (
+    ha_unit_from_number,
+    require_enum_metadata,
+    require_number_metadata,
+)
 from .coordinator import TrovisConfigEntry, TrovisCoordinator
 from .entity import TrovisEntity
 from ._local_dev import apply_local_trovis_modbus_override
@@ -77,6 +83,24 @@ class TrovisHotWaterEntity(TrovisEntity, WaterHeaterEntity):
             translation_key=description.translation_key,
         )
         self.entity_description = description
+        temperature_metadata = require_number_metadata(self._hot_water, "setpoint_day")
+        enum_metadata = require_enum_metadata(self._hot_water, "mode")
+
+        self._enum_metadata = enum_metadata
+        self._option_by_key = {
+            option.key: option for option in enum_metadata.options
+        }
+        self._key_by_value = {
+            int(option.value): option.key for option in enum_metadata.options
+        }
+
+        self._attr_operation_list = list(self._option_by_key)
+        self._attr_min_temp = temperature_metadata.min_value
+        self._attr_max_temp = temperature_metadata.max_value
+        self._attr_target_temperature_step = temperature_metadata.step
+        self._attr_temperature_unit = (
+            ha_unit_from_number(temperature_metadata) or UnitOfTemperature.CELSIUS
+        )
 
 
     @property
@@ -103,11 +127,22 @@ class TrovisHotWaterEntity(TrovisEntity, WaterHeaterEntity):
     def max_temp(self) -> float:
         return self._hot_water.setpoint_max or 90.0
 
-
     @property
     def current_operation(self) -> str | None:
-        return _REVERSE.get(self._hot_water.mode)
+        """Return the current operation mode."""
+        mode = self._hot_water.mode
+        if mode is None:
+            return None
 
+        try:
+            return self._key_by_value.get(int(mode))
+        except (TypeError, ValueError):
+            return None
+
+    @property
+    def operation_list(self) -> list[str]:
+        """Return the list of available operation modes."""
+        return list(self._option_by_key)
 
     async def async_set_temperature(self, **kwargs: Any) -> None:
         """Set a new target temperature."""
@@ -123,7 +158,11 @@ class TrovisHotWaterEntity(TrovisEntity, WaterHeaterEntity):
                 temperature,
                 access_code=self.coordinator.access_code,
             )
-        except (TrovisWriteAccessDisabledError, TrovisWriteAccessError) as err:
+        except (
+            TrovisWriteAccessDisabledError,
+            TrovisWriteAccessError,
+            TrovisValueValidationError,
+        ) as err:
             raise HomeAssistantError(str(err)) from err
         except TrovisWriteNotImplementedError as err:
             raise HomeAssistantError(
@@ -135,10 +174,12 @@ class TrovisHotWaterEntity(TrovisEntity, WaterHeaterEntity):
 
     async def async_set_operation_mode(self, operation_mode: str) -> None:
         """Set a new operation mode."""
-        if operation_mode not in _MODES:
+        try:
+            selected = self._option_by_key[operation_mode]
+        except KeyError as err:
             raise HomeAssistantError(
                 f"Unsupported TROVIS operation mode: {operation_mode}"
-            )
+            ) from err
 
         if not self.coordinator.device.writing_enabled:
             raise HomeAssistantError("Please enable writing for changes!")
@@ -146,10 +187,14 @@ class TrovisHotWaterEntity(TrovisEntity, WaterHeaterEntity):
         try:
             await self._hot_water.async_write_datapoint(
                 "mode",
-                _MODES[operation_mode],
+                self._enum_metadata.enum_type(selected.value),
                 access_code=self.coordinator.access_code,
             )
-        except (TrovisWriteAccessDisabledError, TrovisWriteAccessError) as err:
+        except (
+            TrovisWriteAccessDisabledError,
+            TrovisWriteAccessError,
+            TrovisValueValidationError,
+        ) as err:
             raise HomeAssistantError(str(err)) from err
         except TrovisWriteNotImplementedError as err:
             raise HomeAssistantError(

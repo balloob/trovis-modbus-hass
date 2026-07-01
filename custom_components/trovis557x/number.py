@@ -10,13 +10,14 @@ from homeassistant.components.number import (
     NumberEntityDescription,
     NumberMode,
 )
-from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.const import UnitOfTemperature
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity import EntityCategory
+from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from ._local_dev import apply_local_trovis_modbus_override
+
 apply_local_trovis_modbus_override()
 
 from trovis_modbus import (
@@ -24,13 +25,29 @@ from trovis_modbus import (
     TrovisWriteAccessError,
     TrovisWriteNotImplementedError,
 )
+
+try:
+    from trovis_modbus import TrovisValueValidationError
+except ImportError:  # pragma: no cover - compatibility while developing locally
+    from trovis_modbus.exceptions import TrovisValueValidationError
+
 from .coordinator import TrovisConfigEntry, TrovisCoordinator
 from .entity import TrovisEntity
+from .metadata import (
+    ha_unit_from_number,
+    number_device_class_from_number,
+    require_number_metadata,
+)
 
 
 @dataclass(frozen=True, kw_only=True)
 class TrovisNumberDescription(NumberEntityDescription):
-    """Description of a Trovis number entity."""
+    """Description of a Trovis number entity.
+
+    TROVIS-specific value metadata such as min/max/step/unit comes from
+    trovis-modbus. This description only keeps HA-specific presentation
+    overrides and the selected field name.
+    """
 
     component: str
     field: str
@@ -44,9 +61,6 @@ _CONTROLLER: tuple[TrovisNumberDescription, ...] = (
         name="Controller year",
         component="clock",
         field="year",
-        native_min_value=2000,
-        native_max_value=2099,
-        native_step=1,
         mode=NumberMode.BOX,
         entity_category=EntityCategory.CONFIG,
     ),
@@ -67,7 +81,6 @@ def _rk_number_descriptions(index: int) -> tuple[TrovisNumberDescription, ...]:
             component=component,
             field="room_setpoint_day",
             mode=NumberMode.BOX,
-            native_step=0.1,
             native_unit_of_measurement=UnitOfTemperature.CELSIUS,
             device_class=NumberDeviceClass.TEMPERATURE,
             entity_category=EntityCategory.CONFIG,
@@ -80,7 +93,6 @@ def _rk_number_descriptions(index: int) -> tuple[TrovisNumberDescription, ...]:
             component=component,
             field="room_setpoint_night",
             mode=NumberMode.BOX,
-            native_step=0.1,
             native_unit_of_measurement=UnitOfTemperature.CELSIUS,
             device_class=NumberDeviceClass.TEMPERATURE,
             entity_category=EntityCategory.CONFIG,
@@ -93,9 +105,6 @@ def _rk_number_descriptions(index: int) -> tuple[TrovisNumberDescription, ...]:
             component=component,
             field="slope",
             mode=NumberMode.BOX,
-            native_min_value=0.2,
-            native_max_value=3.2,
-            native_step=0.1,
             entity_category=EntityCategory.CONFIG,
             translation_placeholders=placeholders,
         ),
@@ -106,9 +115,6 @@ def _rk_number_descriptions(index: int) -> tuple[TrovisNumberDescription, ...]:
             component=component,
             field="level",
             mode=NumberMode.BOX,
-            native_min_value=-30,
-            native_max_value=30,
-            native_step=0.1,
             native_unit_of_measurement=UnitOfTemperature.KELVIN,
             entity_category=EntityCategory.CONFIG,
             translation_placeholders=placeholders,
@@ -124,7 +130,6 @@ _HOT_WATER: tuple[TrovisNumberDescription, ...] = (
         component="hot_water",
         field="setpoint_day",
         mode=NumberMode.BOX,
-        native_step=0.1,
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         device_class=NumberDeviceClass.TEMPERATURE,
         entity_category=EntityCategory.CONFIG,
@@ -137,7 +142,6 @@ _HOT_WATER: tuple[TrovisNumberDescription, ...] = (
         component="hot_water",
         field="hold_value",
         mode=NumberMode.BOX,
-        native_step=0.1,
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         device_class=NumberDeviceClass.TEMPERATURE,
         entity_category=EntityCategory.CONFIG,
@@ -189,12 +193,29 @@ class TrovisNumber(TrovisEntity, NumberEntity):
         )
         self.entity_description = description
 
+        number = require_number_metadata(self._subsystem, description.field)
+
+        self._attr_native_min_value = number.min_value
+        self._attr_native_max_value = number.max_value
+        self._attr_native_step = number.step
+
+        self._attr_native_unit_of_measurement = (
+            description.native_unit_of_measurement or ha_unit_from_number(number)
+        )
+        self._attr_device_class = (
+            description.device_class or number_device_class_from_number(number)
+        )
+
+        self._attr_mode = description.mode
+        self._attr_entity_category = description.entity_category
+        self._attr_entity_registry_enabled_default = (
+            description.entity_registry_enabled_default
+        )
 
     @property
     def native_value(self) -> float | int | None:
         """Return the current value."""
         return getattr(self._subsystem, self.entity_description.field)
-
 
     async def async_set_native_value(self, value: float) -> None:
         """Set a new value."""
@@ -207,7 +228,11 @@ class TrovisNumber(TrovisEntity, NumberEntity):
                 value,
                 access_code=self.coordinator.access_code,
             )
-        except (TrovisWriteAccessDisabledError, TrovisWriteAccessError) as err:
+        except (
+            TrovisWriteAccessDisabledError,
+            TrovisWriteAccessError,
+            TrovisValueValidationError,
+        ) as err:
             raise HomeAssistantError(str(err)) from err
         except TrovisWriteNotImplementedError as err:
             raise HomeAssistantError(

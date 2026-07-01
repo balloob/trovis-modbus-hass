@@ -2,17 +2,17 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 import logging
 
-from dataclasses import dataclass
-
 from homeassistant.components.switch import SwitchEntity, SwitchEntityDescription
-from homeassistant.const import EntityCategory
+from homeassistant.helpers.entity import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from ._local_dev import apply_local_trovis_modbus_override
+
 apply_local_trovis_modbus_override()
 
 from trovis_modbus import (
@@ -21,16 +21,27 @@ from trovis_modbus import (
     TrovisWriteNotImplementedError,
 )
 
+try:
+    from trovis_modbus import TrovisValueValidationError
+except ImportError:  # pragma: no cover - compatibility while developing locally
+    from trovis_modbus.exceptions import TrovisValueValidationError
+
+from trovis_modbus.metadata import BooleanMetadata
+
 from .coordinator import TrovisConfigEntry, TrovisCoordinator
 from .entity import TrovisEntity
-
+from .metadata import require_boolean_metadata
 
 _LOGGER = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, kw_only=True)
 class TrovisSwitchDescription(SwitchEntityDescription):
-    """Description of a Trovis switch entity."""
+    """Description of a Trovis switch entity.
+
+    Boolean semantics come from trovis-modbus. This description only selects
+    the field and stores HA-specific presentation values.
+    """
 
     component: str
     field: str
@@ -124,9 +135,9 @@ async def async_setup_entry(
     coordinator = entry.runtime_data
 
     entities: list[SwitchEntity] = [TrovisWriteAccessSwitch(coordinator)]
+
     entities.extend(
-        TrovisSwitch(coordinator, description)
-        for description in _CONTROLLER
+        TrovisSwitch(coordinator, description) for description in _CONTROLLER
     )
 
     for index in (1, 2, 3):
@@ -159,7 +170,6 @@ class TrovisWriteAccessSwitch(TrovisEntity, SwitchEntity):
         """Return whether TROVIS writing is enabled."""
         return self.coordinator.device.writing_enabled
 
-
     async def async_turn_on(self, **kwargs: object) -> None:
         """Enable TROVIS writing."""
         try:
@@ -170,7 +180,6 @@ class TrovisWriteAccessSwitch(TrovisEntity, SwitchEntity):
             raise HomeAssistantError(str(err)) from err
 
         await self.coordinator.async_request_refresh()
-
 
     async def async_turn_off(self, **kwargs: object) -> None:
         """Disable TROVIS writing."""
@@ -206,21 +215,45 @@ class TrovisSwitch(TrovisEntity, SwitchEntity):
         )
         self.entity_description = description
 
+        self._boolean_metadata: BooleanMetadata = require_boolean_metadata(
+            self._subsystem,
+            description.field,
+        )
+
+        self._attr_entity_category = description.entity_category
+        self._attr_entity_registry_enabled_default = (
+            description.entity_registry_enabled_default
+        )
+
+    def _to_ha_bool(self, value: bool) -> bool:
+        """Convert the controller value to Home Assistant switch semantics."""
+        result = bool(value)
+        if self._boolean_metadata.inverted:
+            return not result
+        return result
+
+    def _from_ha_bool(self, value: bool) -> bool:
+        """Convert Home Assistant switch semantics to controller value."""
+        if self._boolean_metadata.inverted:
+            return not value
+        return value
+
     @property
     def is_on(self) -> bool | None:
         """Return whether the switch is on."""
         value = getattr(self._subsystem, self.entity_description.field)
         if value is None:
             return None
-        return bool(value)
+
+        return self._to_ha_bool(bool(value))
 
     async def async_turn_on(self, **kwargs: object) -> None:
         """Turn the switch on."""
-        await self._async_set_switch(True)
+        await self._async_set_switch(self._from_ha_bool(True))
 
     async def async_turn_off(self, **kwargs: object) -> None:
         """Turn the switch off."""
-        await self._async_set_switch(False)
+        await self._async_set_switch(self._from_ha_bool(False))
 
     async def _async_set_switch(self, value: bool) -> None:
         """Set the switch state."""
@@ -233,7 +266,11 @@ class TrovisSwitch(TrovisEntity, SwitchEntity):
                 value,
                 access_code=self.coordinator.access_code,
             )
-        except (TrovisWriteAccessDisabledError, TrovisWriteAccessError) as err:
+        except (
+            TrovisWriteAccessDisabledError,
+            TrovisWriteAccessError,
+            TrovisValueValidationError,
+        ) as err:
             raise HomeAssistantError(str(err)) from err
         except TrovisWriteNotImplementedError as err:
             raise HomeAssistantError(

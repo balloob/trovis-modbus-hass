@@ -5,49 +5,43 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from homeassistant.components.select import SelectEntity, SelectEntityDescription
-from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
-from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers.entity import EntityCategory
+from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from ._local_dev import apply_local_trovis_modbus_override
+
 apply_local_trovis_modbus_override()
 
-from trovis_modbus.enums import OperatingMode
 from trovis_modbus import (
     TrovisWriteAccessDisabledError,
     TrovisWriteAccessError,
     TrovisWriteNotImplementedError,
 )
 
+try:
+    from trovis_modbus import TrovisValueValidationError
+except ImportError:  # pragma: no cover - compatibility while developing locally
+    from trovis_modbus.exceptions import TrovisValueValidationError
+
+from trovis_modbus.metadata import EnumMetadata
+
 from .coordinator import TrovisConfigEntry, TrovisCoordinator
 from .entity import TrovisEntity
-
-
-OPTION_STANDBY = "standby"
-OPTION_MANUAL = "manual"
-OPTION_DAY = "day"
-OPTION_NIGHT = "night"
-
-OPERATION_MODE_OPTIONS: dict[str, OperatingMode] = {
-    OPTION_STANDBY: OperatingMode.STANDBY,
-    OPTION_MANUAL: OperatingMode.MANUAL,
-    OPTION_DAY: OperatingMode.DAY,
-    OPTION_NIGHT: OperatingMode.NIGHT,
-}
-
-OPERATION_MODE_BY_VALUE: dict[OperatingMode, str] = {
-    value: option for option, value in OPERATION_MODE_OPTIONS.items()
-}
+from .metadata import require_enum_metadata
 
 
 @dataclass(frozen=True, kw_only=True)
 class TrovisSelectDescription(SelectEntityDescription):
-    """Description of a Trovis select entity."""
+    """Description of a Trovis select entity.
+
+    Options come from trovis-modbus metadata. This description only selects
+    the field and stores HA-specific presentation values.
+    """
 
     component: str
     field: str
-    options: list[str]
     translation_placeholders: dict[str, str] | None = None
 
 
@@ -63,7 +57,6 @@ def _operation_mode(
         name=f"{placeholder} operation mode",
         component=component,
         field="mode",
-        options=list(OPERATION_MODE_OPTIONS),
         entity_category=EntityCategory.CONFIG,
         translation_placeholders={"rk": placeholder},
     )
@@ -106,29 +99,41 @@ class TrovisSelect(TrovisEntity, SelectEntity):
             translation_placeholders=description.translation_placeholders,
         )
         self.entity_description = description
-        self._attr_options = description.options
 
+        enum_metadata = require_enum_metadata(self._subsystem, description.field)
+        self._enum_metadata: EnumMetadata = enum_metadata
+
+        self._option_by_key = {
+            option.key: option for option in enum_metadata.options
+        }
+        self._key_by_value = {
+            int(option.value): option.key for option in enum_metadata.options
+        }
+
+        self._attr_options = list(self._option_by_key)
+        self._attr_entity_category = description.entity_category
+        self._attr_entity_registry_enabled_default = (
+            description.entity_registry_enabled_default
+        )
 
     @property
     def current_option(self) -> str | None:
         """Return the currently selected option."""
         value = getattr(self._subsystem, self.entity_description.field)
-
         if value is None:
             return None
 
         try:
-            mode = value if isinstance(value, OperatingMode) else OperatingMode(value)
-        except ValueError:
+            return self._key_by_value.get(int(value))
+        except (TypeError, ValueError):
             return None
-
-        return OPERATION_MODE_BY_VALUE.get(mode)
-
 
     async def async_select_option(self, option: str) -> None:
         """Select an option."""
-        if option not in OPERATION_MODE_OPTIONS:
-            raise HomeAssistantError(f"Unsupported TROVIS option: {option}")
+        try:
+            selected = self._option_by_key[option]
+        except KeyError as err:
+            raise HomeAssistantError(f"Unsupported TROVIS option: {option}") from err
 
         if not self.coordinator.device.writing_enabled:
             raise HomeAssistantError("Please enable writing for changes!")
@@ -136,10 +141,14 @@ class TrovisSelect(TrovisEntity, SelectEntity):
         try:
             await self._subsystem.async_write_datapoint(
                 self.entity_description.field,
-                OPERATION_MODE_OPTIONS[option],
+                self._enum_metadata.enum_type(selected.value),
                 access_code=self.coordinator.access_code,
             )
-        except (TrovisWriteAccessDisabledError, TrovisWriteAccessError) as err:
+        except (
+            TrovisWriteAccessDisabledError,
+            TrovisWriteAccessError,
+            TrovisValueValidationError,
+        ) as err:
             raise HomeAssistantError(str(err)) from err
         except TrovisWriteNotImplementedError as err:
             raise HomeAssistantError(
