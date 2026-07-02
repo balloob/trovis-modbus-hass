@@ -77,7 +77,18 @@ async def async_setup_entry(
 ) -> None:
     """Set up Trovis select entities."""
     coordinator = entry.runtime_data
-    async_add_entities(TrovisSelect(coordinator, description) for description in _SELECTS)
+
+    active_components = {
+        f"heating_circuit_{index}"
+        for index in coordinator.device.heating_circuit_indices
+    }
+    active_components.add("hot_water")
+
+    async_add_entities(
+        TrovisSelect(coordinator, description)
+        for description in _SELECTS
+        if description.component in active_components
+    )
 
 
 class TrovisSelect(TrovisEntity, SelectEntity):

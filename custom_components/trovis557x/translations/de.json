@@ -4,8 +4,8 @@
       "user": {
         "description": "Wie ist der Regler verbunden?",
         "menu_options": {
-          "network": "Netzwerk (Modbus TCP)",
-          "serial": "Seriell (Modbus RTU)"
+          "network": "Netzwerk",
+          "serial": "Seriell oder socket://ip:port (Modbus RTU)"
         }
       },
       "network": {
@@ -16,7 +16,7 @@
           "unit_id": "Modbus Unit"
         },
         "data_description": {
-          "host": "Hostname oder IP-Adresse des Modbus-Gateways oder Geräts.",
+          "host": "Hostname or IP des Gateways. Natives Modbus TCP und transparent RTU over TCP werden automatisch erkannt.",
           "port": "TCP-Port, auf dem das Modbus-Gateway erreichbar ist (Standard: 502).",
           "unit_id": "Modbus-Stationsadresse des Reglers (PA1; Standard: 246)."
         }
@@ -28,7 +28,7 @@
           "unit_id": "Modbus Unit"
         },
         "data_description": {
-          "device": "Serielle Schnittstelle, an die der Regler angeschlossen ist. Die Verbindung ist fest auf 19200 Baud, 8N1 eingestellt.",
+          "device": "Serielle Schnittstelle, an die der Regler angeschlossen ist. Die Verbindung ist auf 19200 Baud, 8N1 eingestellt.",
           "unit_id": "Modbus-Stationsadresse des Reglers (PA1; Standard: 246)."
         }
       },
@@ -48,6 +48,11 @@
     },
     "error": {
       "cannot_connect": "Verbindung fehlgeschlagen. Prüfe die Verbindungsdaten und ob der Regler erreichbar ist."
+    }
+  },
+  "options": {
+    "abort": {
+      "cannot_connect": "Verbindung fehlgeschlagen. Prüfe, ob der Regler erreichbar ist."
     }
   },
   "device": {

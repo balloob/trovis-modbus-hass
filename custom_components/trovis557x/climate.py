@@ -61,7 +61,8 @@ async def async_setup_entry(
     """Set up a climate entity per heating circuit."""
     coordinator = entry.runtime_data
     async_add_entities(
-        TrovisHeatingCircuitClimate(coordinator, index) for index in (1, 2, 3)
+        TrovisHeatingCircuitClimate(coordinator, index)
+        for index in coordinator.device.heating_circuit_indices
     )
 
 

@@ -140,7 +140,7 @@ async def async_setup_entry(
         TrovisSwitch(coordinator, description) for description in _CONTROLLER
     )
 
-    for index in (1, 2, 3):
+    for index in coordinator.device.heating_circuit_indices:
         entities.extend(
             TrovisSwitch(coordinator, description)
             for description in _rk_switch_descriptions(index)

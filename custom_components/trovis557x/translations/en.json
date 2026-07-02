@@ -4,8 +4,8 @@
       "user": {
         "description": "How is the controller connected?",
         "menu_options": {
-          "network": "Network (Modbus TCP)",
-          "serial": "Serial (Modbus RTU)"
+          "network": "Network",
+          "serial": "Serial or socket://ip:port (Modbus RTU)"
         }
       },
       "network": {
@@ -16,7 +16,7 @@
           "unit_id": "Modbus Unit"
         },
         "data_description": {
-          "host": "The hostname or IP address of the Modbus gateway or device.",
+          "host": "The hostname or IP address of the gateway. Native Modbus TCP and transparent RTU over TCP are detected automatically.",
           "port": "The TCP port the Modbus gateway listens on (default 502).",
           "unit_id": "The controller's Modbus station address (PA1; default 246)."
         }
@@ -48,6 +48,11 @@
     },
     "error": {
       "cannot_connect": "Failed to connect. Check the connection details and that the controller is reachable."
+    }
+  },
+  "options": {
+    "abort": {
+      "cannot_connect": "Failed to connect. Check that the controller is reachable."
     }
   },
   "device": {

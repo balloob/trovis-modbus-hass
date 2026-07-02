@@ -98,7 +98,7 @@ async def async_setup_entry(
     """Set up Trovis binary sensors."""
     coordinator = entry.runtime_data
     entities = [TrovisBinarySensor(coordinator, d) for d in (*_CONTROLLER, *_HOT_WATER)]
-    for index in (1, 2, 3):
+    for index in coordinator.device.heating_circuit_indices:
         component = f"heating_circuit_{index}"
         for attribute, name, device_class in _CIRCUIT:
             entities.append(

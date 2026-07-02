@@ -152,9 +152,17 @@ async def async_setup_entry(
 ) -> None:
     """Set up Trovis sensors."""
     coordinator = entry.runtime_data
-    entities = [TrovisSensor(coordinator, description) for description in _GLOBAL]
 
-    for index in (1, 2, 3):
+    entities = [
+        TrovisSensor(coordinator, description)
+        for description in _GLOBAL
+        if (
+            description.component != "sensors"
+            or description.attribute in coordinator.device.detected_sensors
+        )
+    ]
+
+    for index in coordinator.device.heating_circuit_indices:
         component = f"heating_circuit_{index}"
         entities.append(
             TrovisSensor(
@@ -169,9 +177,10 @@ async def async_setup_entry(
                     native_unit_of_measurement=PERCENTAGE,
                     state_class=SensorStateClass.MEASUREMENT,
                     entity_category=EntityCategory.DIAGNOSTIC,
-                )
+                ),
             )
         )
+
     async_add_entities(entities)
 
 
